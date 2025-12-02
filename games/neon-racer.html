@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Racer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a1a, #1a1a2e, #16213e);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            max-height: 600px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(100, 255, 218, 0.3);
+        }
+
+        #gameCanvas {
+            background: #0a0a1a;
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(10, 10, 26, 0.95);
+            z-index: 10;
+            transition: opacity 0.5s ease;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 242, 254, 0.5);
+            background: linear-gradient(45deg, #00e6f0, #3da0f0);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .score-display {
+            font-size: 1.8rem;
+            margin: 10px 0;
+            color: #00f2fe;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+        }
+
+        .instructions {
+            text-align: center;
+            max-width: 80%;
+            margin: 20px 0;
+            line-height: 1.6;
+            color: #aaa;
+        }
+
+        .game-over-score {
+            font-size: 2.5rem;
+            color: #ff6b6b;
+            margin: 20px 0;
+            text-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
+        }
+
+        .difficulty-select {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .difficulty-btn {
+            background: rgba(100, 255, 218, 0.2);
+            color: #00f2fe;
+            border: 2px solid #00f2fe;
+            padding: 12px 25px;
+            font-size: 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            min-width: 100px;
+        }
+
+        .difficulty-btn:hover {
+            background: rgba(100, 255, 218, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.3);
+        }
+
+        .difficulty-btn.active {
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            color: white;
+            box-shadow: 0 5px 20px rgba(0, 242, 254, 0.5);
+        }
+
+        .neon-glow {
+            text-shadow: 0 0 15px #00f2fe, 0 0 30px #00f2fe;
+        }
+
+        .road-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .road-line {
+            position: absolute;
+            width: 4px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 10px #00f2fe;
+            border-radius: 2px;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            .btn {
+                padding: 12px 30px;
+                font-size: 1rem;
+            }
+            .difficulty-btn {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+                min-width: 80px;
+            }
+            .score-display, .game-over-score {
+                font-size: 1.5rem;
+            }
+            .instructions {
+                font-size: 0.9rem;
+            }
+            .difficulty-select {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div class="road-lines" id="roadLines"></div>
+        
+        <div id="startScreen" class="screen">
+            <h1>NEON RACER</h1>
+            <p class="instructions">Use LEFT/RIGHT ARROW KEYS to drift<br>Collect coins and avoid obstacles!</p>
+            
+            <div class="difficulty-select">
+                <button class="difficulty-btn active" data-difficulty="easy">EASY</button>
+                <button class="difficulty-btn" data-difficulty="medium">MEDIUM</button>
+                <button class="difficulty-btn" data-difficulty="hard">HARD</button>
+            </div>
+            
+            <button id="startBtn" class="btn">START RACE</button>
+            <p class="score-display">High Score: <span id="highScore">0</span></p>
+        </div>
+        
+        <div id="gameOverScreen" class="screen hidden">
+            <h1>RACE OVER</h1>
+            <p class="game-over-score">Score: <span id="finalScore">0</span></p>
+            <button id="restartBtn" class="btn">RACE AGAIN</button>
+            <p class="score-display">High Score: <span id="highScore2">0</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const finalScore = document.getElementById('finalScore');
+        const highScoreElement = document.getElementById('highScore');
+        const highScoreElement2 = document.getElementById('highScore2');
+        const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+        
+        let gameRunning = false;
+        let score = 0;
+        let highScore = 0;
+        let currentDifficulty = 'easy';
+        let roadSpeed = 0;
+        let roadOffset = 0;
+        let roadLines = [];
+        let player = {
+            x: 0,
+            y: 0,
+            width: 40,
+            height: 25,
+            speedX: 0,
+            maxSpeed: 0,
+            acceleration: 0,
+            friction: 0.85,
+            driftAmount: 0
+        };
+        let coins = [];
+        let obstacles = [];
+        let particles = [];
+        let keys = {};
+        let lastTime = 0;
+        let coinSpawnTimer = 0;
+        let obstacleSpawnTimer = 0;
+        let scoreTimer = 0;
+        
+        // Difficulty settings - Reduced speeds across all levels
+        const difficultySettings = {
+            easy: {
+                roadSpeed: 4,
+                playerMaxSpeed: 6,
+                playerAcceleration: 0.6,
+                coinSpawnRate: 2500,
+                obstacleSpawnRate: 3500
+            },
+            medium: {
+                roadSpeed: 7,
+                playerMaxSpeed: 9,
+                playerAcceleration: 0.9,
+                coinSpawnRate: 2000,
+                obstacleSpawnRate: 2500
+            },
+            hard: {
+                roadSpeed: 10,
+                playerMaxSpeed: 12,
+                playerAcceleration: 1.2,
+                coinSpawnRate: 1500,
+                obstacleSpawnRate: 2000
+            }
+        };
+        
+        // Set canvas size
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            player.x = canvas.width / 2 - player.width / 2;
+            player.y = canvas.height - player.height - 50;
+            
+            // Create road lines
+            createRoadLines();
+        }
+        
+        // Create road lines for background
+        function createRoadLines() {
+            roadLines = [];
+            const lineCount = Math.ceil(canvas.height / 50);
+            const roadWidth = canvas.width * 0.6;
+            const roadStartX = (canvas.width - roadWidth) / 2;
+            
+            for (let i = 0; i < lineCount; i++) {
+                roadLines.push({
+                    x: canvas.width / 2 - 2,
+                    y: i * 50,
+                    width: 4,
+                    height: 30
+                });
+            }
+        }
+        
+        // Draw road
+        function drawRoad() {
+            // Road background
+            const roadWidth = canvas.width * 0.6;
+            const roadStartX = (canvas.width - roadWidth) / 2;
+            
+            ctx.fillStyle = '#222';
+            ctx.fillRect(roadStartX, 0, roadWidth, canvas.height);
+            
+            // Road lines with movement
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.shadowColor = '#00f2fe';
+            ctx.shadowBlur = 10;
+            
+            roadLines.forEach(line => {
+                const y = (line.y + roadOffset) % (canvas.height + 50);
+                ctx.fillRect(line.x, y, line.width, line.height);
+            });
+            
+            ctx.shadowBlur = 0;
+            
+            // Road edges
+            ctx.strokeStyle = '#00f2fe';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([20, 15]);
+            ctx.beginPath();
+            ctx.moveTo(roadStartX, 0);
+            ctx.lineTo(roadStartX, canvas.height);
+            ctx.moveTo(roadStartX + roadWidth, 0);
+            ctx.lineTo(roadStartX + roadWidth, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // Draw player car
+        function drawPlayerCar() {
+            const x = player.x;
+            const y = player.y;
+            const width = player.width;
+            const height = player.height;
+            
+            // Car body with neon outline
+            ctx.fillStyle = '#ff0066';
+            ctx.strokeStyle = '#ff3399';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#ff0066';
+            ctx.shadowBlur = 15;
+            
+            // Main car body
+            ctx.beginPath();
+            ctx.moveTo(x + width / 2, y);
+            ctx.lineTo(x + width, y + height / 3);
+            ctx.lineTo(x + width, y + height);
+            ctx.lineTo(x, y + height);
+            ctx.lineTo(x, y + height / 3);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // Car window
+            ctx.fillStyle = 'rgba(0, 204, 255, 0.7)';
+            ctx.beginPath();
+            ctx.moveTo(x + width / 2, y + 2);
+            ctx.lineTo(x + width - 8, y + height / 3 - 2);
+            ctx.lineTo(x + 8, y + height / 3 - 2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Headlights
+            ctx.fillStyle = '#ffff00';
+            ctx.shadowColor = '#ffff00';
+            ctx.shadowBlur = 10;
+            ctx.fillRect(x + 5, y + height - 3, 4, 3);
+            ctx.fillRect(x + width - 9, y + height - 3, 4, 3);
+            ctx.shadowBlur = 0;
+            
+            // Wheels
+            ctx.fillStyle = '#333';
+            ctx.fillRect(x - 2, y + height - 8, 6, 8);
+            ctx.fillRect(x + width - 4, y + height - 8, 6, 8);
+            
+            // Drift smoke effect
+            if (Math.abs(player.speedX) > 1.5) {
+                createDriftParticles();
+            }
+        }
+        
+        // Create drift particles
+        function createDriftParticles() {
+            const count = 2;
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: player.x + (player.speedX > 0 ? player.width : 0),
+                    y: player.y + player.height,
+                    size: Math.random() * 3 + 1,
+                    speedX: (Math.random() - 0.5) * 1.5 + (player.speedX * -0.2),
+                    speedY: Math.random() * -1.5 - 0.8,
+                    life: 25,
+                    maxLife: 25,
+                    color: player.speedX > 0 ? '#ff6600' : '#0066ff'
+                });
+            }
+        }
+        
+        // Draw coins
+        function drawCoins() {
+            coins.forEach(coin => {
+                const gradient = ctx.createRadialGradient(
+                    coin.x, coin.y, 0,
+                    coin.x, coin.y, coin.radius
+                );
+                gradient.addColorStop(0, '#ffff00');
+                gradient.addColorStop(1, '#ff9900');
+                ctx.fillStyle = gradient;
+                ctx.shadowColor = '#ffff00';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Coin shine
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(coin.x - coin.radius/3, coin.y - coin.radius/3, coin.radius/4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        
+        // Draw obstacles
+        function drawObstacles() {
+            obstacles.forEach(obstacle => {
+                // Truck body
+                ctx.fillStyle = '#666';
+                ctx.shadowColor = '#666';
+                ctx.shadowBlur = 6;
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                ctx.shadowBlur = 0;
+                
+                // Truck windows
+                ctx.fillStyle = '#00ccff';
+                ctx.fillRect(obstacle.x + 5, obstacle.y + 5, obstacle.width - 10, 8);
+                
+                // Truck wheels
+                ctx.fillStyle = '#333';
+                ctx.fillRect(obstacle.x - 2, obstacle.y + obstacle.height - 6, 6, 6);
+                ctx.fillRect(obstacle.x + obstacle.width - 4, obstacle.y + obstacle.height - 6, 6, 6);
+            });
+        }
+        
+        // Draw particles
+        function drawParticles() {
+            particles.forEach(particle => {
+                const alpha = particle.life / particle.maxLife;
+                ctx.fillStyle = particle.color;
+                ctx.globalAlpha = alpha;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+        }
+        
+        // Draw UI
+        function drawUI() {
+            // Speed display
+            ctx.fillStyle = '#00f2fe';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`Speed: ${Math.abs(Math.round(player.speedX * 8))} mph`, 20, 30);
+            
+            // Score
+            ctx.textAlign = 'right';
+            ctx.fillText(`Score: ${score}`, canvas.width - 20, 30);
+            
+            // Neon border effect
+            ctx.strokeStyle = '#00f2fe';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 5]);
+            ctx.strokeRect(10, 10, canvas.width - 20, 40);
+            ctx.setLineDash([]);
+        }
+        
+        // Spawn coin
+        function spawnCoin() {
+            const roadWidth = canvas.width * 0.6;
+            const roadStartX = (canvas.width - roadWidth) / 2;
+            const coinLane = Math.floor(Math.random() * 3);
+            const laneWidth = roadWidth / 3;
+            
+            coins.push({
+                x: roadStartX + laneWidth * (coinLane + 0.5),
+                y: -20,
+                radius: 12,
+                speed: roadSpeed
+            });
+        }
+        
+        // Spawn obstacle
+        function spawnObstacle() {
+            const roadWidth = canvas.width * 0.6;
+            const roadStartX = (canvas.width - roadWidth) / 2;
+            const obstacleLane = Math.floor(Math.random() * 3);
+            const laneWidth = roadWidth / 3;
+            const width = laneWidth * 0.8;
+            
+            obstacles.push({
+                x: roadStartX + laneWidth * obstacleLane + (laneWidth - width) / 2,
+                y: -40,
+                width: width,
+                height: 25,
+                speed: roadSpeed
+            });
+        }
+        
+        // Create explosion particles
+        function createExplosion(x, y) {
+            for (let i = 0; i < 15; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    size: Math.random() * 2.5 + 1,
+                    speedX: (Math.random() - 0.5) * 4,
+                    speedY: (Math.random() - 0.5) * 4,
+                    life: 25,
+                    maxLife: 25,
+                    color: '#ff6600'
+                });
+            }
+        }
+        
+        // Collision detection
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+        
+        // Update game state
+        function update(timestamp) {
+            if (!gameRunning) return;
+            
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            // Update road offset for scrolling effect
+            roadOffset += roadSpeed;
+            
+            // Handle player input
+            if (keys['ArrowLeft']) {
+                player.speedX = Math.max(player.speedX - player.acceleration, -player.maxSpeed);
+            }
+            if (keys['ArrowRight']) {
+                player.speedX = Math.min(player.speedX + player.acceleration, player.maxSpeed);
+            }
+            
+            // Apply friction
+            player.speedX *= player.friction;
+            
+            // Update player position
+            player.x += player.speedX;
+            
+            // Keep player on road
+            const roadWidth = canvas.width * 0.6;
+            const roadStartX = (canvas.width - roadWidth) / 2;
+            const roadEndX = roadStartX + roadWidth;
+            
+            if (player.x < roadStartX) {
+                player.x = roadStartX;
+                player.speedX = 0;
+                createExplosion(player.x, player.y + player.height / 2);
+                gameOver();
+            }
+            if (player.x + player.width > roadEndX) {
+                player.x = roadEndX - player.width;
+                player.speedX = 0;
+                createExplosion(player.x + player.width, player.y + player.height / 2);
+                gameOver();
+            }
+            
+            // Update coins
+            for (let i = coins.length - 1; i >= 0; i--) {
+                coins[i].y += coins[i].speed;
+                
+                // Check coin collection
+                const coinRect = {
+                    x: coins[i].x - coins[i].radius,
+                    y: coins[i].y - coins[i].radius,
+                    width: coins[i].radius * 2,
+                    height: coins[i].radius * 2
+                };
+                
+                if (checkCollision(player, coinRect)) {
+                    score += 10;
+                    coins.splice(i, 1);
+                    continue;
+                }
+                
+                // Remove coins that are off screen
+                if (coins[i].y > canvas.height + 50) {
+                    coins.splice(i, 1);
+                }
+            }
+            
+            // Update obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].y += obstacles[i].speed;
+                
+                // Check collision with obstacle
+                if (checkCollision(player, obstacles[i])) {
+                    createExplosion(obstacles[i].x + obstacles[i].width / 2, obstacles[i].y + obstacles[i].height / 2);
+                    gameOver();
+                }
+                
+                // Remove obstacles that are off screen
+                if (obstacles[i].y > canvas.height + 50) {
+                    obstacles.splice(i, 1);
+                }
+            }
+            
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].x += particles[i].speedX;
+                particles[i].y += particles[i].speedY;
+                particles[i].life--;
+                
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            // Spawn coins
+            coinSpawnTimer += deltaTime;
+            if (coinSpawnTimer > difficultySettings[currentDifficulty].coinSpawnRate) {
+                spawnCoin();
+                coinSpawnTimer = 0;
+            }
+            
+            // Spawn obstacles
+            obstacleSpawnTimer += deltaTime;
+            if (obstacleSpawnTimer > difficultySettings[currentDifficulty].obstacleSpawnRate) {
+                spawnObstacle();
+                obstacleSpawnTimer = 0;
+            }
+            
+            // Increase score over time
+            scoreTimer += deltaTime;
+            if (scoreTimer > 100) {
+                score += 1;
+                scoreTimer = 0;
+                
+                // Gradually increase difficulty
+                if (score % 100 === 0) {
+                    roadSpeed = Math.min(roadSpeed + 0.3, difficultySettings[currentDifficulty].roadSpeed + 2);
+                }
+            }
+        }
+        
+        // Render game
+        function render() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw game elements
+            drawRoad();
+            drawCoins();
+            drawObstacles();
+            drawParticles();
+            drawPlayerCar();
+            drawUI();
+        }
+        
+        // Game loop
+        function gameLoop(timestamp) {
+            update(timestamp);
+            render();
+            if (gameRunning) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        // Start game
+        function startGame() {
+            // Apply difficulty settings
+            const settings = difficultySettings[currentDifficulty];
+            roadSpeed = settings.roadSpeed;
+            player.maxSpeed = settings.playerMaxSpeed;
+            player.acceleration = settings.playerAcceleration;
+            
+            gameRunning = true;
+            score = 0;
+            roadOffset = 0;
+            player.x = canvas.width / 2 - player.width / 2;
+            player.y = canvas.height - player.height - 50;
+            player.speedX = 0;
+            coins = [];
+            obstacles = [];
+            particles = [];
+            coinSpawnTimer = 0;
+            obstacleSpawnTimer = 0;
+            scoreTimer = 0;
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            if (score > highScore) {
+                highScore = score;
+            }
+            finalScore.textContent = score;
+            highScoreElement.textContent = highScore;
+            highScoreElement2.textContent = highScore;
+            gameOverScreen.classList.remove('hidden');
+        }
+        
+        // Difficulty selection
+        difficultyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                difficultyButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentDifficulty = button.dataset.difficulty;
+            });
+        });
+        
+        // Event listeners
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+        });
+        
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        
+        // Initialize
+        resizeCanvas();
+        highScoreElement.textContent = highScore;
+        highScoreElement2.textContent = highScore;
+        
+        // Initial render
+        render();
+    </script>
+</body>
+</html>
+
