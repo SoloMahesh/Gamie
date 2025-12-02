@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Gamie - Game World</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#7f13ec",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#191022",
+                    },
+                    fontFamily: {
+                        "display": ["Be Vietnam Pro"]
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+</head>
+
+<body class="font-display">
+    <div
+        class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden">
+        <div class="layout-container flex h-full grow flex-col">
+            <div class="px-4 sm:px-10 md:px-20 lg:px-40 flex flex-1 justify-center py-5">
+                <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+                    <header
+                        class="flex items-center justify-between whitespace-nowrap border-b border-solid border-white/10 dark:border-b-[#362348] px-4 sm:px-10 py-3">
+                        <div class="flex items-center gap-8">
+                            <div class="flex items-center gap-4 text-black dark:text-white">
+                                <div class="size-6">
+                                    <svg fill="currentColor" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                                        <g clip-path="url(#clip0_6_535)">
+                                            <path clip-rule="evenodd"
+                                                d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z"
+                                                fill-rule="evenodd"></path>
+                                        </g>
+                                        <defs>
+                                            <clippath id="clip0_6_535">
+                                                <rect fill="white" height="48" width="48"></rect>
+                                            </clippath>
+                                        </defs>
+                                    </svg>
+                                </div>
+                                <h2
+                                    class="text-black dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">
+                                    Gamie</h2>
+                            </div>
+                            <div class="hidden md:flex items-center gap-9">
+                                <a class="text-gray-800 dark:text-white text-sm font-medium leading-normal"
+                                    href="#">Home</a>
+                                <a class="text-gray-800 dark:text-white text-sm font-medium leading-normal" href="#">All
+                                    Games</a>
+                                <a class="text-gray-800 dark:text-white text-sm font-medium leading-normal" href="#">My
+                                    Profile</a>
+                            </div>
+                        </div>
+                        <div class="flex flex-1 justify-end items-center gap-2 md:gap-4 lg:gap-8">
+                            <label class="flex flex-col min-w-32 md:min-w-40 !h-10 max-w-64">
+                                <div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+                                    <div
+                                        class="text-gray-400 dark:text-[#ad92c9] flex border-none bg-black/5 dark:bg-[#362348] items-center justify-center pl-3 pr-0 rounded-l-lg border-r-0">
+                                        <span class="material-symbols-outlined">search</span>
+                                    </div>
+                                    <input
+                                        class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-800 dark:text-white focus:outline-0 focus:ring-0 border-none bg-black/5 dark:bg-[#362348] focus:border-none h-full placeholder:text-gray-400 dark:placeholder:text-[#ad92c9] px-2 md:px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
+                                        placeholder="Search" value="" />
+                                </div>
+                            </label>
+                            <div class="hidden sm:flex gap-2">
+                                <button
+                                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em]">
+                                    <span class="truncate">Sign Up</span>
+                                </button>
+                                <button
+                                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-black/5 dark:bg-[#362348] text-gray-800 dark:text-white text-sm font-bold leading-normal tracking-[0.015em]">
+                                    <span class="truncate">Log In</span>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+                    <main>
+                        <section class="mt-5">
+                            <div class="@container">
+                                <div class="@[480px]:p-4">
+                                    <div class="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4"
+                                        data-alt="Abstract futuristic digital landscape with glowing purple and blue geometric shapes"
+                                        style='background-image: linear-gradient(rgba(18, 18, 18, 0.4) 0%, rgba(18, 18, 18, 0.7) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuCpjJ-6_TngkLq6GrQS9wat8f3RejtwOUggiPOemokGug9JfzViuaQElIs8fNnQrPeRFq6bo2ajxN1WONccGlElSsiKsh2FxU4Q4Bb8FqAdZU0DrntysXerW9qET_3TJpCrj00dP_fM3XdF3PlFT5l47_b7WFpT1tkN4FQ4f9nU7MqHKfLwvHGl8Y9ohuYoW6cZIwHcE-BNhmd-Yp4oBPUY0VofQpwwdrHTvPB2uOG6KjqmTbn7DLOwNp675nRODjee6WZmZOK94v8");'>
+                                        <div class="flex flex-col gap-2 text-center">
+                                            <h1
+                                                class="text-white text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]">
+                                                Welcome to the game world
+                                            </h1>
+                                            <h2
+                                                class="text-white/80 text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal">
+                                                No stress, only fun.</h2>
+                                        </div>
+                                        <button
+                                            class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em]">
+                                            <span class="truncate">Explore Games</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <section>
+                            <h2
+                                class="text-gray-800 dark:text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-10">
+                                Explore Our Library</h2>
+                            <div class="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-4 p-4">
+                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="A futuristic soldier in armor running through a cosmic battlefield"
+                                    href="#"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuBPB7WqcsyJwt7ggNgSsJJ2RpJoHARHBuUpTDEXBZ9bsZFbYoboMuR4_O0ZPk0-eVI7KoNh1tLWIBPpIjlQxlcpmHs37saRBHt8iMmktqo5N6Q1rvppOsaa90MnRRJrMSdXkITRQ7qWGMh_25lzrtf3SsnGhX2LYVb83q0KA6rIiyKy3gRTaKVWLN7YmzeKmFEphi_7kzI2cYI6kK5iz2Q8GRZl7HSCV30zBycvRbCPJBLaPLl5JOTqaXd7ePaO0iB-LG6kwhqMPqs");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Cosmic
+                                        Raiders</p>
+                                </a>
+                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="A mystical creature guarding an enchanted, glowing forest" href="#"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuAKGO_MAYjauxj4CDlpcorPji8JZ2pPeuZLA6Z7bTroSd-pqq0j0Zj78vbEUQ9mYNOGH1FbioItMtoI_HXyYiQIXchWXAOllT6s13El4LELJfxfbJASOdHAsdCrX9HMhnKkZfFMqO9bu4_uIZyITa6q3UnI7HNtLEtkHoNbw43wB_iY1GyOvPlN__lxKlZY_wCpevjxFT2uAspYP8P9qqd8U0S5v5zOcKbGtqwgqg9Yct77mrd6UzwnjcrmNmQwgcFZEIut-u8UKtI");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Forest
+                                        Guardian</p>
+                                </a>
+                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="A sleek sports car drifting through a city at night with neon lights"
+                                    href="#"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuCgQOlKTxSTQrr32YEOrMUDXi9UR_rN9WNxVF-bHSSIH-My0gbipTmSAVAKc1RkjW6b_-G6_PZFdMAvGkc1cOjB7-OuYoonHI_9dtKvxPKy5oDUC4MaSMU0XordSNGyrVe1ohG_MAwt3jETn1HN2GV2c2Kv0tz_rPdIeb2XFtbxeiw-uVVAVLyj2iREmOKejv3dKXS2WyDja8Z1_1WgY430ZVgyhU-xGVcAV9T4WdDZrk4jKTTix7tbt-gqwUf-q2WqVvKt18NXj_M");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Neon
+                                        Racer</p>
+                                </a>
+                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="A cyborg warrior standing in a futuristic, dystopian city" href="#"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuDAkt0NeoV2xb0wIkdQ9FRBIKruX3pxg8g-rZ-5-fRIhNvxX2WxYvNngBh6-Z7DTYTYdNfkmUnjyio9vC3pxXdrX_l9M5x70BMrzvxEwgUI7vyOy7d3Q0WKLmk0i29jjh7sdhoRYbeng-Vqi6s2Oz2-EeoDJiUKjpjKMFVfQuRZ2hDoHrENnqL4d5efUKajhVMVBOxy4Yh0v_MpAJy9630EafVo1weJhTqADgRQDF5Lk064gVdh60733wN3c4LR-isvKLxBxEcvNX0");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">
+                                        Cybernetic Revolt</p>
+                                </a>
+                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="A majestic dragon flying over a castle surrounded by gold" href="#"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuBKrJ4IBSJ-3zdtC-cGMHQCyW63gdcha9CmJTJhahbt2RqGGA33jsLGOTtJpFMi1RVakxdHVflNIx0g78mHgju_A3nkXmAKF5P7tmgkHibmwNT06ivXP-Pje2xImw80qGX7Ie9kvDocEPtUOupIXvUjZqp-jWFgM0cvvS-OHI5CGweCa2AIUbbOdWppA3mIrbFljMbh-n8_ZPkUJlN5SQSE5_p4ygJJQji2z9IniCCohxhA8YneonhBY6HCkgb9byxxJQqvRI5x7NU");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Dragon's
+                                        Hoard</p>
+                                </a>
+                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="A deep-sea diver discovering a mysterious underwater city" href="#"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuAbEM7WGEdZ6xKOBN0rdDTPne7p-hyMW6dMhyMyH39vZYcx-7yHxcR1cJ8fZ0ueqqAbpcEsCasRKbELJKTaSMQ_bum3cABliddk2psERvHDkeTNX8I3QI5K4XuZjukVus-zUawSKIKM-g0oEXPqLw_cHE65d0KYAkPoUigNTKRWeUHa2ykFYNu1n9CAuu4iYD0d_XXv6uoM5XK75lre-BxP_NZ6oxQETtem_93_t1CQ6IRi4Nj6nWrC5PNAfxU4zoDLKS9gCcFV7P8");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Abyssal
+                                        Depths</p>
+                                </a>
+                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="A steampunk airship flying through clouds towards a floating island"
+                                    href="#"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuCoEp_S_JKdslEFGfoRk4zyYjO_N1ryoLe6h2oq1kuOMBj1q2oZ0949z22POelM1D0JAhiLWfVlaGc5C61ZsGbg4g_u7UVHRnv5wVU62Xwb-tkDk7JrFAQ59amxs86me8wCYluvnRxxqDFQvYy3qTu6Mjo8rX0sYlcQ3Ex6zwmeCZs767PLwVB8Bx_r3_AHaydbtN-ByeVQG4_tvjwQ-dW63c7C-eIk6FEgYmO5OBBMO6ufX4luGTpXHAriS_29AIbecckVZ5fwc_0");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Skyward
+                                        Odyssey</p>
+                                </a>
+                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="An abstract representation of quantum particles and energy fields"
+                                    href="#"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuDfQXzUcHxdyGq1_G8yESbLNca_N9z7NB8a4FHGQ4flTwgs1MWzB-OM-ITNpUvoesMtZgpisr3MHeIdif5sZAmjMNB68SwedPC6JEoc5NhqPgua2xcWuohXfpsIbkQ1xbvAYYpcgXMqZveeK5VylEQUZlxjQNJ3l-tczGEM_mxGBWid_I8abSu_dXB-rmf5IpNNV3A3zVDzG5UEtNhjijiAXUuSSXYV30nCzEGQh8_GbxJjVlSbZk0FkdO1O16jVdP58sEhaZ2K02E");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Quantum
+                                        Shift</p>
+                                </a>
+                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="A viking longship sailing through a stormy sea with mountains in the background"
+                                    href="/games/candy-crush.html"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuALRLMSCpZq8x3tjdcXUu_w2W5gfjQnAkVSEbVfQ9nNWOLjm5ldxCYSVo4-gZ8l4fLzTmgGmPiiHypt20zCC7HeNDrwa9s3Id6-Noyg5ZjlmpbNs1hMrVsA6FQVfb_NDScqUMMvwatkZ7V5jtpWfcD_q0pXRI0AQ_9oINuBBNbn16Tvkdp08M9zK1UbV4-c06JkWn0h1l9-U0c-9Pl4hYmKZtsfQkBnP4Lhao16p26Dm8yJ-rJmtkPJ_tLyTysSjTu87PnW1Xrmrek");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Viking
+                                        Saga</p>
+                                </a>
+                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="A retro 8-bit arcade screen with pixelated characters" href="#"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuCnzXtmDOsT4qmQmAKCmA6G0mKSSvtf2tDn5rdE9h7FQJmLPX9KgydaQV215vZVJd0A6aSpbLD1j_vJTD2lnTfrz0DLdCcxF66i_nbOZMIXibuQ2OA89IdkjDPWAjJ82-3mY-y6XP-1Ij6kIdMk1AtpGw6DpGBcqFQPg5mTzR_MnibsU73FzK3fdVlUl9kpQdoa1oHNbXj4D-ntYA36-M64orkVHtX5hldOcG3cqfr0eI1WseGq6joufBjwbS0QOAuAplknmBxwReY");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Pixel
+                                        Space Shooter</p>
+                                </a>
+                            </div>
+                        </section>
+                    </main>
+                    <footer
+                        class="flex flex-col gap-6 px-5 py-10 text-center @container mt-10 border-t border-solid border-white/10 dark:border-t-[#362348]">
+                        <div
+                            class="flex flex-wrap items-center justify-center gap-x-6 gap-y-4 @[480px]:flex-row @[480px]:justify-around">
+                            <a class="text-gray-500 dark:text-[#ad92c9] text-base font-normal leading-normal min-w-40 hover:text-primary dark:hover:text-white transition-colors"
+                                href="#">Contact</a>
+                            <a class="text-gray-500 dark:text-[#ad92c9] text-base font-normal leading-normal min-w-40 hover:text-primary dark:hover:text-white transition-colors"
+                                href="#">Terms of Service</a>
+                            <a class="text-gray-500 dark:text-[#ad92c9] text-base font-normal leading-normal min-w-40 hover:text-primary dark:hover:text-white transition-colors"
+                                href="#">Privacy Policy</a>
+                        </div>
+                        <div class="flex flex-wrap justify-center gap-6">
+                            <a class="text-gray-500 dark:text-[#ad92c9] hover:text-primary dark:hover:text-white transition-colors"
+                                href="#">
+                                <svg fill="currentColor" height="24" viewbox="0 0 16 16" width="24"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15">
+                                    </path>
+                                </svg>
+                            </a>
+                            <a class="text-gray-500 dark:text-[#ad92c9] hover:text-primary dark:hover:text-white transition-colors"
+                                href="#">
+                                <svg fill="currentColor" height="24" viewbox="0 0 16 16" width="24"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.917 3.917 0 0 0-1.417.923A3.927 3.927 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.916 3.916 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.926 3.926 0 0 0-.923-1.417A3.911 3.911 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0h.003zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599.28.28.453.546.598.92.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.47 2.47 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.478 2.478 0 0 1-.92-.598 2.48 2.48 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.231 0-2.136.008-2.388.046-3.231.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92.28-.28.546-.453.92-.598.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045v.002zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92zm-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217zm0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334z">
+                                    </path>
+                                </svg>
+                            </a>
+                            <a class="text-gray-500 dark:text-[#ad92c9] hover:text-primary dark:hover:text-white transition-colors"
+                                href="#">
+                                <svg fill="currentColor" height="24" viewbox="0 0 16 16" width="24"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951">
+                                    </path>
+                                </svg>
+                            </a>
+                            <a class="text-gray-500 dark:text-[#ad92c9] hover:text-primary dark:hover:text-white transition-colors"
+                                href="#">
+                                <svg fill="currentColor" height="24" viewbox="0 0 16 16" width="24"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M13.545 2.907a13.227 13.227 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.19 12.19 0 0 0-3.658 0 8.258 8.258 0 0 0-.412-.833.051.051 0 0 0-.052-.025c-1.125.194-2.22.534-3.257 1.011a.041.041 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032c.001.014.01.028.021.037a13.276 13.276 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019c.308-.42.582-.863.818-1.329a.05.05 0 0 0-.01-.059.051.051 0 0 0-.018-.011 8.875 8.875 0 0 1-1.248-.595.05.05 0 0 1-.02-.066.051.051 0 0 1 .015-.019c.084-.063.168-.129.248-.195a.05.05 0 0 1 .051-.007c2.619 1.196 5.454 1.196 8.041 0a.05.05 0 0 1 .053.007c.08.066.164.132.248.195a.051.051 0 0 1 .015.019.05.05 0 0 1-.02.066 8.875 8.875 0 0 1-1.248.595.05.05 0 0 0-.01.059.051.051 0 0 0-.018.011c.236.466.51.909.818 1.329a.05.05 0 0 0 .056.019 13.235 13.235 0 0 0 4.001-2.02.049.049 0 0 0 .021-.037c.279-2.985-.42-5.996-1.57-8.995a.04.04 0 0 0-.021-.018zm-8.198 7.307c-.789 0-1.438-.724-1.438-1.612 0-.889.637-1.613 1.438-1.613.807 0 1.45.73 1.438 1.613 0 .888-.637 1.612-1.438 1.612zm5.316 0c-.788 0-1.438-.724-1.438-1.612 0-.889.637-1.613 1.438-1.613.807 0 1.451.73 1.438 1.613 0 .888-.631 1.612-1.438 1.612z">
+                                    </path>
+                                </svg>
+                            </a>
+                        </div>
+                        <p class="text-gray-500 dark:text-[#ad92c9] text-sm font-normal leading-normal">© 2024 Gamie.
+                            All rights reserved.</p>
+                    </footer>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
