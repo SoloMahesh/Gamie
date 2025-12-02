@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Catcher</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary-orange: #ff6b35;
+            --dark-orange: #d65a28;
+            --light-orange: #ff9e7d;
+            --green: #4caf50;
+            --red: #f44336;
+            --yellow: #ffeb3b;
+            --blue: #2196f3;
+            --white: #ffffff;
+            --black: #333333;
+            --light-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            background: var(--light-bg);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .game-container {
+            width: 95vw;
+            max-width: 800px;
+            height: 90vh;
+            max-height: 600px;
+            background: linear-gradient(180deg, #87CEEB 0%, #e0f7fa 100%);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-header {
+            background: linear-gradient(90deg, var(--primary-orange), var(--dark-orange));
+            color: var(--white);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .score-container {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .score-box {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .game-board {
+            flex: 1;
+            position: relative;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23e0f7fa"/><path d="M0 0 L 100 0 L 100 20 Q 50 40, 0 20 Z" fill="%238B4513" opacity="0.1"/></svg>');
+            background-size: 100px 100px;
+        }
+
+        .basket {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 60px;
+            background: linear-gradient(135deg, #8B4513, #A0522D);
+            border-radius: 0 0 10px 10px;
+            z-index: 5;
+            transition: transform 0.1s ease;
+        }
+
+        .basket::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 10px;
+            right: 10px;
+            height: 15px;
+            background: #D2B48C;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .basket::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 20px;
+            background: #DEB887;
+            border-radius: 10px;
+        }
+
+        .food {
+            position: absolute;
+            top: -50px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            z-index: 3;
+            animation: fall linear forwards;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--white);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .food.fruit {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+        }
+
+        .food.vegetable {
+            background: linear-gradient(135deg, #4caf50, #8bc34a);
+        }
+
+        .food.dessert {
+            background: linear-gradient(135deg, #ff9800, #ffc107);
+        }
+
+        .food.junk {
+            background: linear-gradient(135deg, #f44336, #e91e63);
+        }
+
+        .explosion {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 4;
+            animation: explode 0.3s forwards;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .game-over.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .game-over h2 {
+            color: var(--white);
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px var(--yellow);
+        }
+
+        .final-score {
+            color: var(--light-orange);
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+        }
+
+        .btn {
+            background: linear-gradient(90deg, var(--primary-orange), var(--dark-orange));
+            color: var(--white);
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .instructions {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: var(--white);
+            font-size: 1.1rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 6;
+            opacity: 0.9;
+        }
+
+        @keyframes fall {
+            from {
+                transform: translateY(0) rotate(0deg);
+            }
+            to {
+                transform: translateY(calc(100vh + 50px)) rotate(360deg);
+            }
+        }
+
+        @keyframes explode {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        .health-bar {
+            width: 200px;
+            height: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-left: 10px;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--red), var(--green));
+            width: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .food-counter {
+            display: flex;
+            gap: 15px;
+        }
+
+        .food-type {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            .game-header {
+                padding: 10px 15px;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .score-container {
+                gap: 10px;
+            }
+            
+            .score-box {
+                padding: 6px 10px;
+                font-size: 0.9rem;
+            }
+            
+            .food-counter {
+                gap: 8px;
+            }
+            
+            .food-type {
+                padding: 4px 8px;
+                font-size: 0.8rem;
+            }
+            
+            .game-over h2 {
+                font-size: 2rem;
+            }
+            
+            .final-score {
+                font-size: 1.8rem;
+            }
+            
+            .btn {
+                padding: 10px 25px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <div class="score-container">
+                <div class="score-box">
+                    <i class="fas fa-coins"></i>
+                    <span id="score">0</span>
+                </div>
+                <div class="score-box">
+                    <i class="fas fa-heart"></i>
+                    <div class="health-bar">
+                        <div class="health-fill" id="health-fill"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="food-counter">
+                <div class="food-type">
+                    <i class="fas fa-apple-alt" style="color: #ff6b6b;"></i>
+                    <span id="fruit-count">0</span>
+                </div>
+                <div class="food-type">
+                    <i class="fas fa-carrot" style="color: #4caf50;"></i>
+                    <span id="veg-count">0</span>
+                </div>
+                <div class="food-type">
+                    <i class="fas fa-ice-cream" style="color: #ff9800;"></i>
+                    <span id="dessert-count">0</span>
+                </div>
+            </div>
+            <div class="score-box">
+                <i class="fas fa-clock"></i>
+                <span id="time">60s</span>
+            </div>
+        </div>
+        
+        <div class="instructions">Use ← → ARROWS to move | CATCH GOOD FOOD, AVOID JUNK!</div>
+        
+        <div class="game-board" id="game-board">
+            <div class="basket" id="basket"></div>
+        </div>
+        
+        <div class="game-over" id="game-over">
+            <h2>Game Over!</h2>
+            <div class="final-score">Final Score: <span id="final-score">0</span></div>
+            <button class="btn" id="restart-btn">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        let score = 0;
+        let health = 100;
+        let gameRunning = true;
+        let gameTime = 60;
+        let foodSpeed = 3;
+        let basketPosition = 50;
+        let foods = [];
+        let foodCounts = { fruit: 0, vegetable: 0, dessert: 0 };
+        let gameInterval;
+        let spawnInterval;
+        let keysPressed = {};
+        
+        // Food types configuration
+        const foodTypes = [
+            { type: 'fruit', emoji: '🍎', points: 10, health: 0, color: 'fruit' },
+            { type: 'fruit', emoji: '🍌', points: 10, health: 0, color: 'fruit' },
+            { type: 'vegetable', emoji: '🥦', points: 15, health: 0, color: 'vegetable' },
+            { type: 'vegetable', emoji: '🥕', points: 15, health: 0, color: 'vegetable' },
+            { type: 'dessert', emoji: '🍦', points: 20, health: 0, color: 'dessert' },
+            { type: 'dessert', emoji: '🎂', points: 20, health: 0, color: 'dessert' },
+            { type: 'junk', emoji: '🍔', points: -20, health: -15, color: 'junk' },
+            { type: 'junk', emoji: '🍕', points: -20, health: -15, color: 'junk' }
+        ];
+        
+        // DOM elements
+        const gameBoard = document.getElementById('game-board');
+        const basket = document.getElementById('basket');
+        const scoreElement = document.getElementById('score');
+        const healthFill = document.getElementById('health-fill');
+        const timeElement = document.getElementById('time');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreElement = document.getElementById('final-score');
+        const restartBtn = document.getElementById('restart-btn');
+        const fruitCountElement = document.getElementById('fruit-count');
+        const vegCountElement = document.getElementById('veg-count');
+        const dessertCountElement = document.getElementById('dessert-count');
+        
+        // Initialize game
+        function initGame() {
+            score = 0;
+            health = 100;
+            gameRunning = true;
+            gameTime = 60;
+            foodSpeed = 3;
+            basketPosition = 50;
+            foods = [];
+            foodCounts = { fruit: 0, vegetable: 0, dessert: 0 };
+            keysPressed = {};
+            
+            // Clear existing elements
+            document.querySelectorAll('.food, .explosion').forEach(el => el.remove());
+            
+            // Update UI
+            scoreElement.textContent = score;
+            healthFill.style.width = health + '%';
+            timeElement.textContent = gameTime + 's';
+            fruitCountElement.textContent = foodCounts.fruit;
+            vegCountElement.textContent = foodCounts.vegetable;
+            dessertCountElement.textContent = foodCounts.dessert;
+            gameOverScreen.classList.remove('show');
+            
+            // Start game loops
+            gameInterval = setInterval(gameLoop, 1000/60);
+            spawnInterval = setInterval(spawnFood, 1200);
+            
+            // Start timer
+            const timer = setInterval(() => {
+                if (gameRunning) {
+                    gameTime--;
+                    timeElement.textContent = gameTime + 's';
+                    
+                    if (gameTime <= 0) {
+                        endGame();
+                        clearInterval(timer);
+                    }
+                }
+            }, 1000);
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            // Handle continuous movement
+            if (keysPressed['ArrowLeft']) {
+                basketPosition = Math.max(5, basketPosition - 6);
+                basket.style.left = basketPosition + '%';
+            }
+            if (keysPressed['ArrowRight']) {
+                basketPosition = Math.min(95, basketPosition + 6);
+                basket.style.left = basketPosition + '%';
+            }
+            
+            // Move foods
+            foods.forEach((food, index) => {
+                const currentTop = parseInt(food.style.top) || -50;
+                food.style.top = (currentTop + foodSpeed) + 'px';
+                
+                // Check if food reached bottom
+                if (currentTop > gameBoard.clientHeight) {
+                    // Only punish for good food falling
+                    const foodType = food.dataset.type;
+                    if (foodType !== 'junk') {
+                        health -= 5;
+                        healthFill.style.width = health + '%';
+                        
+                        if (health <= 0) {
+                            endGame();
+                        }
+                    }
+                    food.remove();
+                    foods.splice(index, 1);
+                }
+            });
+            
+            // Check collisions
+            checkCollisions();
+        }
+        
+        // Spawn food
+        function spawnFood() {
+            if (!gameRunning) return;
+            
+            const foodConfig = foodTypes[Math.floor(Math.random() * foodTypes.length)];
+            const food = document.createElement('div');
+            food.className = `food ${foodConfig.color}`;
+            food.innerHTML = foodConfig.emoji;
+            food.dataset.type = foodConfig.type;
+            food.dataset.points = foodConfig.points;
+            food.dataset.health = foodConfig.health;
+            food.style.left = Math.random() * (gameBoard.clientWidth - 40) + 'px';
+            food.style.animationDuration = (8 - Math.min(7, gameTime/12)) + 's';
+            gameBoard.appendChild(food);
+            foods.push(food);
+            
+            // Increase difficulty
+            if (gameTime % 8 === 0 && foodSpeed < 10) {
+                foodSpeed += 0.3;
+            }
+        }
+        
+        // Check collisions between basket and food
+        function checkCollisions() {
+            foods.forEach((food, index) => {
+                const foodRect = food.getBoundingClientRect();
+                const basketRect = basket.getBoundingClientRect();
+                
+                if (
+                    foodRect.left < basketRect.right &&
+                    foodRect.right > basketRect.left &&
+                    foodRect.top < basketRect.bottom &&
+                    foodRect.bottom > basketRect.top
+                ) {
+                    // Handle collision
+                    const points = parseInt(food.dataset.points);
+                    const healthChange = parseInt(food.dataset.health);
+                    const foodType = food.dataset.type;
+                    
+                    // Update score
+                    score += points;
+                    scoreElement.textContent = score;
+                    
+                    // Update health
+                    if (healthChange !== 0) {
+                        health = Math.max(0, Math.min(100, health + healthChange));
+                        healthFill.style.width = health + '%';
+                        
+                        if (health <= 0) {
+                            endGame();
+                        }
+                    }
+                    
+                    // Update food counts
+                    if (foodType !== 'junk') {
+                        foodCounts[foodType]++;
+                        updateFoodCounts();
+                    }
+                    
+                    // Create explosion effect
+                    createExplosion(foodRect.left + foodRect.width/2, foodRect.top + foodRect.height/2);
+                    
+                    // Remove food
+                    food.remove();
+                    foods.splice(index, 1);
+                }
+            });
+        }
+        
+        // Create explosion effect
+        function createExplosion(x, y) {
+            const explosion = document.createElement('div');
+            explosion.className = 'explosion';
+            explosion.style.left = (x - 30) + 'px';
+            explosion.style.top = (y - 30) + 'px';
+            gameBoard.appendChild(explosion);
+            
+            setTimeout(() => {
+                explosion.remove();
+            }, 300);
+        }
+        
+        // Update food count display
+        function updateFoodCounts() {
+            fruitCountElement.textContent = foodCounts.fruit;
+            vegCountElement.textContent = foodCounts.vegetable;
+            dessertCountElement.textContent = foodCounts.dessert;
+        }
+        
+        // End game
+        function endGame() {
+            gameRunning = false;
+            clearInterval(gameInterval);
+            clearInterval(spawnInterval);
+            finalScoreElement.textContent = score;
+            gameOverScreen.classList.add('show');
+        }
+        
+        // Event listeners for continuous movement
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            keysPressed[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keysPressed[e.key] = false;
+        });
+        
+        restartBtn.addEventListener('click', initGame);
+        
+        // Touch controls for mobile
+        let touchStartX = 0;
+        gameBoard.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+        });
+        
+        gameBoard.addEventListener('touchmove', (e) => {
+            if (!gameRunning) return;
+            e.preventDefault();
+            const touchX = e.touches[0].clientX;
+            const diff = touchX - touchStartX;
+            basketPosition = Math.max(5, Math.min(95, basketPosition + diff/15));
+            basket.style.left = basketPosition + '%';
+            touchStartX = touchX;
+        });
+        
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>
+
