@@ -183,6 +183,68 @@
             .instructions {
                 font-size: 0.9rem;
             }
+            .touch-controls {
+                display: flex;
+            }
+        }
+
+        /* Touch controls */
+        .touch-controls {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            padding: 0 20px;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
+            box-sizing: border-box;
+            z-index: 100;
+        }
+
+        .dpad {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: auto;
+        }
+
+        .middle {
+            display: flex;
+            gap: 40px;
+        }
+
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 0, 204, 0.2);
+            border: 2px solid #ff00cc;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            margin: 5px;
+        }
+
+        .control-btn:active {
+            background: rgba(255, 0, 204, 0.5);
+        }
+
+        .shoot-btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(51, 51, 255, 0.2);
+            border: 2px solid #33f;
+            border-radius: 50%;
+            pointer-events: auto;
+        }
+
+        .shoot-btn:active {
+            background: rgba(51, 51, 255, 0.5);
         }
     </style>
 </head>
@@ -190,6 +252,18 @@
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
         <div class="stars" id="stars"></div>
+
+        <div class="touch-controls">
+            <div class="dpad">
+                <button class="control-btn" id="btnUp">▲</button>
+                <div class="middle">
+                    <button class="control-btn" id="btnLeft">◀</button>
+                    <button class="control-btn" id="btnRight">▶</button>
+                </div>
+                <button class="control-btn" id="btnDown">▼</button>
+            </div>
+            <button class="control-btn shoot-btn" id="btnShoot">●</button>
+        </div>
         
         <div id="startScreen" class="screen">
             <h1>COSMIC RAIDER</h1>
@@ -238,6 +312,8 @@
         let lastTime = 0;
         let enemySpawnTimer = 0;
         let powerUpSpawnTimer = 0;
+        let lastShotTime = 0;
+        const SHOOT_COOLDOWN = 200; // ms
         
         // Set canvas size
         function resizeCanvas() {
@@ -426,6 +502,9 @@
         function update(timestamp) {
             if (!gameRunning) return;
             
+            if (lastTime === 0) {
+                lastTime = timestamp;
+            }
             const deltaTime = timestamp - lastTime;
             lastTime = timestamp;
             
@@ -444,7 +523,7 @@
             }
             
             // Shoot bullets
-            if (keys[' '] && timestamp % 200 < 16) {
+            if (keys[' '] && timestamp - lastShotTime > SHOOT_COOLDOWN) {
                 bullets.push({
                     x: player.x + player.width / 2 - 2,
                     y: player.y,
@@ -452,6 +531,7 @@
                     height: 10,
                     speed: 7
                 });
+                lastShotTime = timestamp;
             }
             
             // Update bullets
@@ -620,6 +700,27 @@
         window.addEventListener('keyup', (e) => {
             keys[e.key] = false;
         });
+
+        // Touch controls
+        const btnUp = document.getElementById('btnUp');
+        const btnDown = document.getElementById('btnDown');
+        const btnLeft = document.getElementById('btnLeft');
+        const btnRight = document.getElementById('btnRight');
+        const btnShoot = document.getElementById('btnShoot');
+
+        function addTouchListener(btn, key) {
+            if (!btn) return;
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+            btn.addEventListener('mousedown', (e) => { e.preventDefault(); keys[key] = true; });
+            btn.addEventListener('mouseup', (e) => { e.preventDefault(); keys[key] = false; });
+        }
+
+        addTouchListener(btnUp, 'ArrowUp');
+        addTouchListener(btnDown, 'ArrowDown');
+        addTouchListener(btnLeft, 'ArrowLeft');
+        addTouchListener(btnRight, 'ArrowRight');
+        addTouchListener(btnShoot, ' ');
         
         startBtn.addEventListener('click', startGame);
         restartBtn.addEventListener('click', startGame);
