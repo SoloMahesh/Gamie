@@ -238,6 +238,8 @@
         let lastTime = 0;
         let enemySpawnTimer = 0;
         let powerUpSpawnTimer = 0;
+        let lastShotTime = 0;
+        const SHOOT_COOLDOWN = 200; // ms
         
         // Set canvas size
         function resizeCanvas() {
@@ -426,6 +428,9 @@
         function update(timestamp) {
             if (!gameRunning) return;
             
+            if (lastTime === 0) {
+                lastTime = timestamp;
+            }
             const deltaTime = timestamp - lastTime;
             lastTime = timestamp;
             
@@ -444,7 +449,7 @@
             }
             
             // Shoot bullets
-            if (keys[' '] && timestamp % 200 < 16) {
+            if (keys[' '] && timestamp - lastShotTime > SHOOT_COOLDOWN) {
                 bullets.push({
                     x: player.x + player.width / 2 - 2,
                     y: player.y,
@@ -452,6 +457,7 @@
                     height: 10,
                     speed: 7
                 });
+                lastShotTime = timestamp;
             }
             
             // Update bullets
