@@ -97,6 +97,8 @@
         let enemies = [];
         let stars = [];
         let keys = {};
+        let lastShotTime = 0;
+        const SHOOT_COOLDOWN = 200; // ms
 
         // Player class
         class Player {
@@ -270,10 +272,10 @@
             player.draw();
 
             // Handle shooting
-            if (keys[' '] || keys['Spacebar']) {
+            const currentTime = Date.now();
+            if ((keys[' '] || keys['Spacebar']) && currentTime - lastShotTime > SHOOT_COOLDOWN) {
                 bullets.push(new Bullet(player.x, player.y - 20));
-                keys[' '] = false;
-                keys['Spacebar'] = false;
+                lastShotTime = currentTime;
             }
 
             // Update and draw bullets
@@ -308,17 +310,21 @@
                 }
 
                 // Check collision with bullets
+                let enemyHit = false;
                 for (let j = bullets.length - 1; j >= 0; j--) {
                     if (enemies[i].collidesWithBullet(bullets[j])) {
                         score += 10;
                         scoreDisplay.textContent = score;
                         enemies.splice(i, 1);
                         bullets.splice(j, 1);
+                        enemyHit = true;
                         break;
                     }
                 }
 
-                if (i < enemies.length && enemies[i].isOffScreen()) {
+                if (enemyHit) continue;
+
+                if (enemies[i].isOffScreen()) {
                     enemies.splice(i, 1);
                 }
             }
