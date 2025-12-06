@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaction Test</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #2b87d1; color: white; user-select: none; touch-action: manipulation; }
+
+        #game-area {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        h1 { font-size: 3rem; margin-bottom: 20px; }
+        p { font-size: 1.5rem; max-width: 600px; padding: 0 20px; }
+
+        .icon { font-size: 5rem; margin-bottom: 20px; }
+
+        /* States */
+        .waiting { background: #ce2636; } /* Red */
+        .ready { background: #2b87d1; }   /* Blue */
+        .go { background: #4bdb6a; }      /* Green */
+
+    </style>
+</head>
+<body>
+    <div id="game-area" class="ready">
+        <div class="icon" id="icon">⚡</div>
+        <h1 id="title">Reaction Time</h1>
+        <p id="instruction">Tap anywhere to start.</p>
+    </div>
+
+    <script>
+        const gameArea = document.getElementById('game-area');
+        const title = document.getElementById('title');
+        const instruction = document.getElementById('instruction');
+        const icon = document.getElementById('icon');
+
+        let state = 'start'; // start, waiting, go, result
+        let startTime = 0;
+        let timeoutId = null;
+
+        gameArea.addEventListener('mousedown', handleClick);
+        gameArea.addEventListener('touchstart', (e) => { e.preventDefault(); handleClick(); }, {passive: false});
+
+        function handleClick() {
+            switch(state) {
+                case 'start':
+                case 'result':
+                    prepareTest();
+                    break;
+                case 'waiting':
+                    tooSoon();
+                    break;
+                case 'go':
+                    finishTest();
+                    break;
+            }
+        }
+
+        function prepareTest() {
+            state = 'waiting';
+            gameArea.className = 'waiting';
+            title.innerText = "Wait for Green...";
+            instruction.innerText = "";
+            icon.innerText = "✋";
+
+            const delay = Math.floor(Math.random() * 2000) + 1000; // 1-3 seconds
+            timeoutId = setTimeout(startTest, delay);
+        }
+
+        function startTest() {
+            state = 'go';
+            gameArea.className = 'go';
+            title.innerText = "CLICK!";
+            icon.innerText = "⚡";
+            startTime = Date.now();
+        }
+
+        function finishTest() {
+            const time = Date.now() - startTime;
+            state = 'result';
+            gameArea.className = 'ready';
+            title.innerText = `${time} ms`;
+            instruction.innerText = "Click to try again";
+            icon.innerText = "⏱️";
+
+            // Comment
+            if (time < 200) instruction.innerText += "\nInhuman!";
+            else if (time < 300) instruction.innerText += "\nNice reflex!";
+            else instruction.innerText += "\nYou can do better!";
+        }
+
+        function tooSoon() {
+            clearTimeout(timeoutId);
+            state = 'result';
+            gameArea.className = 'ready';
+            title.innerText = "Too Soon!";
+            instruction.innerText = "Click to try again";
+            icon.innerText = "⚠️";
+        }
+    </script>
+</body>
+</html>

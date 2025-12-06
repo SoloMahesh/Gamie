@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Guess</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #121213; color: white; }
+        h1 { margin-bottom: 20px; font-weight: bold; border-bottom: 1px solid #3a3a3c; padding-bottom: 10px; }
+
+        .board { display: grid; grid-template-rows: repeat(6, 1fr); gap: 5px; margin-bottom: 20px; }
+        .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+        .tile { width: 50px; height: 50px; border: 2px solid #3a3a3c; display: flex; justify-content: center; align-items: center; font-size: 2rem; font-weight: bold; text-transform: uppercase; user-select: none; }
+
+        /* Colors */
+        .tile.correct { background: #538d4e; border-color: #538d4e; }
+        .tile.present { background: #b59f3b; border-color: #b59f3b; }
+        .tile.absent { background: #3a3a3c; border-color: #3a3a3c; }
+        .tile.filled { border-color: #565758; }
+
+        /* Animation */
+        @keyframes pop { 50% { transform: scale(1.1); } }
+        .tile.pop { animation: pop 0.1s; }
+
+        @keyframes flip {
+            0% { transform: rotateX(0); }
+            50% { transform: rotateX(90deg); }
+            100% { transform: rotateX(0); }
+        }
+        .tile.flip { animation: flip 0.5s ease; }
+
+        .keyboard { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 500px; padding: 0 10px; }
+        .key-row { display: flex; justify-content: center; gap: 6px; }
+        .key { background: #818384; border-radius: 4px; border: none; color: white; font-weight: bold; padding: 15px 0; flex: 1; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; -webkit-tap-highlight-color: transparent; }
+        .key.large { flex: 1.5; font-size: 0.8rem; }
+
+        .key.correct { background: #538d4e; }
+        .key.present { background: #b59f3b; }
+        .key.absent { background: #3a3a3c; }
+
+        .message { position: absolute; top: 10%; background: white; color: black; padding: 10px 20px; border-radius: 5px; font-weight: bold; opacity: 0; transition: opacity 0.5s; pointer-events: none; z-index: 10; }
+        .message.show { opacity: 1; }
+
+        @media (max-width: 350px) {
+            .tile { width: 40px; height: 40px; font-size: 1.5rem; }
+            .key { padding: 10px 0; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Word Guess</h1>
+    <div class="board" id="board"></div>
+    <div class="keyboard" id="keyboard"></div>
+    <div class="message" id="message"></div>
+
+    <script>
+        // Simplified word list
+        const WORDS = ["APPLE", "BEACH", "CHAIR", "DANCE", "EAGLE", "FLAME", "GRAPE", "HOUSE", "IMAGE", "JUICE", "KNIFE", "LEMON", "MOUSE", "NIGHT", "OCEAN", "PIANO", "QUEEN", "RIVER", "SNAKE", "TABLE", "UMBRA", "VOICE", "WATER", "XENON", "YACHT", "ZEBRA", "WORLD", "HELLO", "GAME", "CODE"];
+        let targetWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+
+        const MAX_GUESSES = 6;
+        const WORD_LENGTH = 5;
+        let currentGuess = 0;
+        let currentTile = 0;
+        let guesses = [
+            ["", "", "", "", ""],
+            ["", "", "", "", ""],
+            ["", "", "", "", ""],
+            ["", "", "", "", ""],
+            ["", "", "", "", ""],
+            ["", "", "", "", ""]
+        ];
+        let gameOver = false;
+
+        const boardEl = document.getElementById('board');
+        const keyboardEl = document.getElementById('keyboard');
+        const messageEl = document.getElementById('message');
+
+        const layout = [
+            "QWERTYUIOP",
+            "ASDFGHJKL",
+            "ZXCVBNM"
+        ];
+
+        function init() {
+            // Create Board
+            for (let r = 0; r < MAX_GUESSES; r++) {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'row';
+                for (let c = 0; c < WORD_LENGTH; c++) {
+                    const tileEl = document.createElement('div');
+                    tileEl.className = 'tile';
+                    tileEl.id = `tile-${r}-${c}`;
+                    rowEl.appendChild(tileEl);
+                }
+                boardEl.appendChild(rowEl);
+            }
+
+            // Create Keyboard
+            layout.forEach((rowStr, i) => {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'key-row';
+
+                if (i === 2) {
+                    // Enter key
+                    const enterKey = createKey("ENTER");
+                    enterKey.classList.add('large');
+                    enterKey.onclick = submitGuess;
+                    rowEl.appendChild(enterKey);
+                }
+
+                for (let char of rowStr) {
+                    const key = createKey(char);
+                    key.onclick = () => handleKeyPress(char);
+                    rowEl.appendChild(key);
+                }
+
+                if (i === 2) {
+                    // Backspace key
+                    const backKey = createKey("⌫");
+                    backKey.classList.add('large');
+                    backKey.onclick = deleteChar;
+                    rowEl.appendChild(backKey);
+                }
+
+                keyboardEl.appendChild(rowEl);
+            });
+        }
+
+        function createKey(char) {
+            const btn = document.createElement('button');
+            btn.className = 'key';
+            btn.innerText = char;
+            btn.id = `key-${char}`;
+            return btn;
+        }
+
+        function handleKeyPress(char) {
+            if (gameOver) return;
+            if (currentTile < WORD_LENGTH) {
+                guesses[currentGuess][currentTile] = char;
+                const tile = document.getElementById(`tile-${currentGuess}-${currentTile}`);
+                tile.innerText = char;
+                tile.classList.add('filled', 'pop');
+                currentTile++;
+            }
+        }
+
+        function deleteChar() {
+            if (gameOver) return;
+            if (currentTile > 0) {
+                currentTile--;
+                guesses[currentGuess][currentTile] = "";
+                const tile = document.getElementById(`tile-${currentGuess}-${currentTile}`);
+                tile.innerText = "";
+                tile.classList.remove('filled', 'pop');
+            }
+        }
+
+        function submitGuess() {
+            if (gameOver) return;
+            if (currentTile !== WORD_LENGTH) {
+                showMessage("Not enough letters");
+                return;
+            }
+
+            const guessWord = guesses[currentGuess].join("");
+
+            // Check letters
+            let remainingTarget = targetWord.split("");
+            const guessArr = guessWord.split("");
+            const result = new Array(5).fill('absent');
+
+            // First pass: Correct
+            for (let i = 0; i < 5; i++) {
+                if (guessArr[i] === remainingTarget[i]) {
+                    result[i] = 'correct';
+                    remainingTarget[i] = null; // Mark as used
+                }
+            }
+
+            // Second pass: Present
+            for (let i = 0; i < 5; i++) {
+                if (result[i] !== 'correct' && remainingTarget.includes(guessArr[i])) {
+                    result[i] = 'present';
+                    // Remove first occurrence
+                    remainingTarget[remainingTarget.indexOf(guessArr[i])] = null;
+                }
+            }
+
+            // Animate and update
+            result.forEach((status, i) => {
+                setTimeout(() => {
+                    const tile = document.getElementById(`tile-${currentGuess}-${i}`);
+                    tile.classList.add('flip');
+                    tile.classList.add(status);
+
+                    // Update keyboard
+                    const key = document.getElementById(`key-${guessArr[i]}`);
+                    if (status === 'correct') {
+                        key.classList.remove('present');
+                        key.classList.add('correct');
+                    } else if (status === 'present' && !key.classList.contains('correct')) {
+                        key.classList.add('present');
+                    } else if (status === 'absent' && !key.classList.contains('correct') && !key.classList.contains('present')) {
+                        key.classList.add('absent');
+                    }
+                }, i * 200);
+            });
+
+            setTimeout(() => {
+                if (guessWord === targetWord) {
+                    showMessage("Splendid!");
+                    gameOver = true;
+                } else if (currentGuess === MAX_GUESSES - 1) {
+                    showMessage(targetWord);
+                    gameOver = true;
+                } else {
+                    currentGuess++;
+                    currentTile = 0;
+                }
+            }, 1000);
+        }
+
+        function showMessage(msg) {
+            messageEl.innerText = msg;
+            messageEl.classList.add('show');
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+            }, 2000);
+        }
+
+        // Physical Keyboard
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') submitGuess();
+            else if (e.key === 'Backspace') deleteChar();
+            else if (/^[a-zA-Z]$/.test(e.key)) handleKeyPress(e.key.toUpperCase());
+        });
+
+        init();
+    </script>
+</body>
+</html>

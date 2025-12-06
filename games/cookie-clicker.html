@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Clicker</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background: #fdf6e3; color: #5d4037; height: 100vh; overflow: hidden; margin: 0; user-select: none; }
+        h1 { margin-top: 20px; font-size: 2rem; }
+
+        .cookie-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            width: 100%;
+        }
+
+        #cookie {
+            width: 250px;
+            height: 250px;
+            background: url('https://em-content.zobj.net/source/microsoft-teams/337/cookie_1f36a.png') no-repeat center center;
+            background-size: contain;
+            cursor: pointer;
+            transition: transform 0.1s;
+            border-radius: 50%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        #cookie:active { transform: scale(0.95); }
+
+        .score-display {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .cps-display {
+            font-size: 1.2rem;
+            opacity: 0.7;
+            margin-bottom: 20px;
+        }
+
+        .upgrades {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-top: 2px solid #ddd;
+            height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .upgrade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .upgrade-item:hover { background: #f9f9f9; }
+        .upgrade-item.disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .upgrade-info h3 { margin: 0 0 5px 0; font-size: 1.1rem; }
+        .upgrade-info p { margin: 0; font-size: 0.9rem; color: #888; }
+
+        .upgrade-cost {
+            font-weight: bold;
+            color: #d84315;
+        }
+
+        /* Falling cookies */
+        .falling-cookie {
+            position: absolute;
+            font-size: 20px;
+            pointer-events: none;
+            animation: fall 1s linear forwards;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(100px); opacity: 0; }
+        }
+
+        @media (max-width: 600px) {
+            #cookie { width: 200px; height: 200px; }
+            .score-display { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Cookie Clicker</h1>
+
+    <div class="score-display"><span id="score">0</span> Cookies</div>
+    <div class="cps-display">per second: <span id="cps">0.0</span></div>
+
+    <div class="cookie-container">
+        <div id="cookie"></div>
+    </div>
+
+    <div class="upgrades" id="upgrades">
+        <!-- Upgrades injected via JS -->
+    </div>
+
+    <script>
+        let cookies = 0;
+        let cookiesPerClick = 1;
+        let cookiesPerSecond = 0;
+
+        const upgrades = [
+            { id: 'cursor', name: 'Cursor', cost: 15, cps: 0.1, count: 0 },
+            { id: 'grandma', name: 'Grandma', cost: 100, cps: 1, count: 0 },
+            { id: 'farm', name: 'Farm', cost: 1100, cps: 8, count: 0 },
+            { id: 'mine', name: 'Mine', cost: 12000, cps: 47, count: 0 },
+            { id: 'factory', name: 'Factory', cost: 130000, cps: 260, count: 0 },
+            { id: 'bank', name: 'Bank', cost: 1400000, cps: 1400, count: 0 }
+        ];
+
+        const scoreEl = document.getElementById('score');
+        const cpsEl = document.getElementById('cps');
+        const upgradesEl = document.getElementById('upgrades');
+        const cookieEl = document.getElementById('cookie');
+
+        function updateUI() {
+            scoreEl.innerText = Math.floor(cookies).toLocaleString();
+            cpsEl.innerText = cookiesPerSecond.toFixed(1);
+
+            // Update upgrade buttons state
+            upgrades.forEach(u => {
+                const el = document.getElementById(`upgrade-${u.id}`);
+                const costEl = el.querySelector('.upgrade-cost');
+                const countEl = el.querySelector('.upgrade-count');
+
+                costEl.innerText = Math.ceil(u.cost).toLocaleString();
+                countEl.innerText = u.count;
+
+                if (cookies >= u.cost) {
+                    el.classList.remove('disabled');
+                } else {
+                    el.classList.add('disabled');
+                }
+            });
+        }
+
+        function renderUpgrades() {
+            upgradesEl.innerHTML = '';
+            upgrades.forEach(u => {
+                const item = document.createElement('div');
+                item.className = 'upgrade-item disabled';
+                item.id = `upgrade-${u.id}`;
+                item.onclick = () => buyUpgrade(u);
+
+                item.innerHTML = `
+                    <div class="upgrade-info">
+                        <h3>${u.name} <span style="font-size:0.8rem; color:#555;">(Lvl <span class="upgrade-count">${u.count}</span>)</span></h3>
+                        <p>+${u.cps} CPS</p>
+                    </div>
+                    <div class="upgrade-cost">${u.cost}</div>
+                `;
+
+                upgradesEl.appendChild(item);
+            });
+        }
+
+        function buyUpgrade(upgrade) {
+            if (cookies >= upgrade.cost) {
+                cookies -= upgrade.cost;
+                upgrade.count++;
+                upgrade.cost *= 1.15; // Increase cost
+                recalculateCPS();
+                updateUI();
+            }
+        }
+
+        function recalculateCPS() {
+            cookiesPerSecond = upgrades.reduce((acc, u) => acc + (u.count * u.cps), 0);
+        }
+
+        function clickCookie(e) {
+            cookies += cookiesPerClick;
+
+            // Visual effect
+            const floatText = document.createElement('div');
+            floatText.className = 'falling-cookie';
+            floatText.innerText = `+${cookiesPerClick}`;
+
+            // Position relative to click
+            let x, y;
+            if (e.type === 'touchstart') {
+                x = e.touches[0].clientX;
+                y = e.touches[0].clientY;
+            } else {
+                x = e.clientX;
+                y = e.clientY;
+            }
+
+            floatText.style.left = `${x}px`;
+            floatText.style.top = `${y}px`;
+            document.body.appendChild(floatText);
+
+            setTimeout(() => floatText.remove(), 1000);
+
+            updateUI();
+        }
+
+        // Game Loop
+        setInterval(() => {
+            cookies += cookiesPerSecond / 10; // Update 10 times a second
+            updateUI();
+        }, 100);
+
+        // Save/Load (Simple)
+        // ... omitted for brevity
+
+        cookieEl.addEventListener('mousedown', clickCookie);
+        cookieEl.addEventListener('touchstart', (e) => { e.preventDefault(); clickCookie(e); });
+
+        renderUpgrades();
+        updateUI();
+    </script>
+</body>
+</html>
