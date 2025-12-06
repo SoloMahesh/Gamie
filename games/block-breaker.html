@@ -5,29 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Block Breaker</title>
     <style>
-        body { margin: 0; background: #222; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: #fff; }
+        body { margin: 0; background: #222; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: #fff; touch-action: none; }
         #gameCanvas { display: block; width: 100%; height: 100%; }
-        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 10; }
         .hidden { display: none !important; }
         h1 { font-size: 40px; color: #42a5f5; }
         button { background: #42a5f5; border: none; padding: 10px 20px; color: white; font-size: 18px; cursor: pointer; border-radius: 5px; margin-top: 20px; }
 
-        .touch-controls { display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 20%; z-index: 5; }
-        .touch-left, .touch-right { width: 50%; height: 100%; opacity: 0.1; background: #fff; border: 1px solid #ccc; }
-        .touch-left { float: left; }
-        .touch-right { float: right; }
-        .touch-hint { position: absolute; bottom: 50px; width: 100%; text-align: center; font-size: 14px; opacity: 0.5; pointer-events: none; }
+        .touch-controls { display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
+        /* Visible control areas for testing/user feedback */
+        .touch-area {
+            position: absolute;
+            bottom: 0;
+            height: 30%;
+            width: 50%;
+            pointer-events: auto; /* Catch touches */
+            background: rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            color: rgba(255, 255, 255, 0.2);
+            user-select: none;
+        }
+        .touch-left { left: 0; border-right: 1px solid rgba(255, 255, 255, 0.1); }
+        .touch-right { right: 0; }
 
-        @media (max-width: 768px) { .touch-controls { display: block; } }
+        .touch-area:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 1024px) { .touch-controls { display: block; } }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
 
     <div class="touch-controls">
-        <div class="touch-left" id="btnLeft"></div>
-        <div class="touch-right" id="btnRight"></div>
-        <div class="touch-hint">Tap Left/Right to move</div>
+        <div class="touch-area touch-left" id="btnLeft">❮</div>
+        <div class="touch-area touch-right" id="btnRight">❯</div>
     </div>
 
     <div id="startScreen" class="screen">
@@ -57,14 +74,14 @@
         let lives = 3;
 
         // Paddle
-        const paddle = { x: 0, y: 0, width: 100, height: 15, speed: 500, color: '#42a5f5' };
+        const paddle = { x: 0, y: 0, width: 100, height: 15, speed: 600, color: '#42a5f5' };
 
         // Ball
-        const ball = { x: 0, y: 0, radius: 8, dx: 0, dy: 0, speed: 400, color: '#fff' };
+        const ball = { x: 0, y: 0, radius: 8, dx: 0, dy: 0, speed: 450, color: '#fff' };
 
         // Bricks
         let bricks = [];
-        const brickConfig = { rows: 5, cols: 8, padding: 10, offsetTop: 50, offsetLeft: 35, height: 20 };
+        const brickConfig = { rows: 5, cols: 8, padding: 10, offsetTop: 60, offsetLeft: 35, height: 25 };
 
         // Input
         let rightPressed = false;
@@ -74,29 +91,48 @@
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            paddle.y = canvas.height - 50;
+            paddle.y = canvas.height - 80; // Moved up a bit for mobile thumb clearance
+            paddle.width = Math.min(150, canvas.width / 4); // Responsive paddle
+
+            // Recalculate bricks offset to center them
+            if(bricks.length > 0) {
+                 // dynamic resize logic if needed, but simple re-init is easier on resize
+            }
         }
-        window.addEventListener('resize', resize);
-        resize();
+        window.addEventListener('resize', () => {
+            resize();
+            if(!gameRunning) initBricks(); // Re-layout bricks if waiting
+        });
 
         function initBricks() {
             bricks = [];
-            const brickWidth = (canvas.width - brickConfig.offsetLeft * 2 - brickConfig.padding * (brickConfig.cols - 1)) / brickConfig.cols;
-            for(let c=0; c<brickConfig.cols; c++) {
+            // Calculate responsive columns
+            let cols = Math.floor(canvas.width / 60);
+            cols = Math.max(4, Math.min(10, cols)); // Clamp columns
+
+            const totalPadding = (cols - 1) * brickConfig.padding;
+            const availableWidth = canvas.width - 40; // 20px margin each side
+            const brickWidth = availableWidth / cols;
+            const startX = 20 + (availableWidth - (cols * brickWidth)) / 2; // Center
+
+            for(let c=0; c<cols; c++) {
                 for(let r=0; r<brickConfig.rows; r++) {
                     bricks.push({
-                        x: (c * (brickWidth + brickConfig.padding)) + brickConfig.offsetLeft,
-                        y: (r * (brickConfig.height + brickConfig.padding)) + brickConfig.offsetTop,
-                        width: brickWidth,
+                        x: 20 + c * (brickWidth + (c < cols - 1 ? 0 : 0)), // Simplified layout
+                        // Actually better to just use calculated width
+                        x: 20 + c * brickWidth,
+                        y: (r * (brickConfig.height + 10)) + brickConfig.offsetTop,
+                        width: brickWidth - 10, // Gap
                         height: brickConfig.height,
                         status: 1,
-                        color: `hsl(${c * 40 + r * 10}, 70%, 50%)`
+                        color: `hsl(${c * 30 + r * 15}, 70%, 50%)`
                     });
                 }
             }
         }
 
         function init() {
+            resize();
             score = 0;
             lives = 3;
             initBricks();
@@ -111,8 +147,8 @@
 
         function resetBall() {
             ball.x = canvas.width / 2;
-            ball.y = canvas.height - 60;
-            ball.dx = (Math.random() - 0.5) * 2 * ball.speed;
+            ball.y = paddle.y - 20;
+            ball.dx = (Math.random() - 0.5) * 2 * (ball.speed * 0.7);
             ball.dy = -ball.speed;
             paddle.x = (canvas.width - paddle.width) / 2;
         }
@@ -147,12 +183,17 @@
             }
 
             // Paddle collision
-            if(ball.y + ball.radius >= paddle.y && ball.y - ball.radius <= paddle.y + paddle.height &&
+            if(ball.dy > 0 && ball.y + ball.radius >= paddle.y && ball.y - ball.radius <= paddle.y + paddle.height &&
                ball.x >= paddle.x && ball.x <= paddle.x + paddle.width) {
-                   ball.dy = -Math.abs(ball.dy);
+                   ball.dy = -Math.abs(ball.dy); // Bounce up
                    // Add spin based on where it hit
                    const hitPoint = ball.x - (paddle.x + paddle.width/2);
-                   ball.dx = hitPoint * 4;
+                   // Normalize hit point (-1 to 1)
+                   const normalizedHit = hitPoint / (paddle.width/2);
+                   ball.dx = normalizedHit * (ball.speed * 0.8);
+
+                   // Increase speed slightly
+                   ball.speed += 10;
             }
 
             // Brick collision
@@ -182,6 +223,12 @@
                 if(b.status == 1) {
                     ctx.fillStyle = b.color;
                     ctx.fillRect(b.x, b.y, b.width, b.height);
+
+                    // bevel effect
+                    ctx.fillStyle = "rgba(255,255,255,0.2)";
+                    ctx.fillRect(b.x, b.y, b.width, 4);
+                    ctx.fillStyle = "rgba(0,0,0,0.2)";
+                    ctx.fillRect(b.x, b.y+b.height-4, b.width, 4);
                 }
             });
 
@@ -197,10 +244,12 @@
             ctx.closePath();
 
             // Score & Lives
-            ctx.font = "16px Arial";
+            ctx.font = "bold 20px Arial";
             ctx.fillStyle = "#fff";
-            ctx.fillText("Score: " + score, 8, 20);
-            ctx.fillText("Lives: " + lives, canvas.width - 65, 20);
+            ctx.textAlign = "left";
+            ctx.fillText("Score: " + score, 20, 35);
+            ctx.textAlign = "right";
+            ctx.fillText("Lives: " + lives, canvas.width - 20, 35);
         }
 
         function loop(timestamp) {
@@ -248,14 +297,28 @@
         const btnRight = document.getElementById('btnRight');
 
         function addTouch(elem, isRight) {
-            elem.addEventListener('touchstart', e => { e.preventDefault(); if(isRight) rightPressed = true; else leftPressed = true; });
-            elem.addEventListener('touchend', e => { e.preventDefault(); if(isRight) rightPressed = false; else leftPressed = false; });
+            // Prevent default to avoid scrolling/zooming
+            const handler = (e) => {
+                e.preventDefault();
+                if(e.type === 'touchstart' || e.type === 'mousedown') {
+                    if(isRight) rightPressed = true; else leftPressed = true;
+                } else {
+                    if(isRight) rightPressed = false; else leftPressed = false;
+                }
+            };
+
+            elem.addEventListener('touchstart', handler, {passive: false});
+            elem.addEventListener('touchend', handler, {passive: false});
+            elem.addEventListener('mousedown', handler);
+            elem.addEventListener('mouseup', handler);
+            elem.addEventListener('mouseleave', handler);
         }
+
         addTouch(btnLeft, false);
         addTouch(btnRight, true);
 
+        // Resize initially
         resize();
-        // Initial static draw (optional)
     </script>
 </body>
 </html>

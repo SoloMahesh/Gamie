@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whack-a-Mole</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #8bc34a; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0; user-select: none; }
+        h1 { font-size: 3rem; color: #fff; text-shadow: 2px 2px #33691e; margin-bottom: 10px; }
+        .score-board { font-size: 1.5rem; color: #fff; background: rgba(0,0,0,0.3); padding: 10px 20px; border-radius: 20px; margin-bottom: 20px; }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 90vw;
+            max-width: 600px;
+            aspect-ratio: 1; /* Keep square */
+        }
+
+        .hole {
+            background: #795548;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 10px 20px rgba(0,0,0,0.5);
+            aspect-ratio: 1;
+        }
+
+        .hole::after {
+            content: '';
+            display: block;
+            background: url('data:image/svg+xml;utf8,<svg width="100" height="50" xmlns="http://www.w3.org/2000/svg"><ellipse cx="50" cy="25" rx="40" ry="15" fill="rgba(0,0,0,0.2)"/></svg>') no-repeat bottom center;
+            background-size: contain;
+            width: 100%;
+            height: 20px;
+            position: absolute;
+            bottom: 5px;
+            z-index: 2;
+        }
+
+        .mole {
+            width: 70%;
+            height: 80%;
+            background: #ffb74d;
+            border-radius: 40% 40% 0 0;
+            position: absolute;
+            bottom: -100%;
+            left: 15%;
+            transition: bottom 0.2s;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="30" cy="40" r="5" fill="black"/><circle cx="70" cy="40" r="5" fill="black"/><ellipse cx="50" cy="60" rx="15" ry="10" fill="pink"/><path d="M40 70 Q50 80 60 70" stroke="black" fill="none"/></svg>');
+            background-size: cover;
+            cursor: pointer;
+            z-index: 1;
+        }
+
+        .mole.up {
+            bottom: 0;
+        }
+
+        .mole.bonked {
+            background-color: #ff5722;
+        }
+
+        button { padding: 15px 30px; font-size: 1.2rem; background: #fff; color: #8bc34a; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        button:hover { transform: scale(1.05); }
+
+    </style>
+</head>
+<body>
+
+    <h1>Whack-a-Mole!</h1>
+    <div class="score-board">Score: <span id="score">0</span> | Time: <span id="time">30</span></div>
+
+    <div class="game-grid">
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+    </div>
+
+    <button onclick="startGame()" id="startBtn">Start Game</button>
+
+    <script>
+        const holes = document.querySelectorAll('.hole');
+        const scoreBoard = document.getElementById('score');
+        const timeBoard = document.getElementById('time');
+        const moles = document.querySelectorAll('.mole');
+        let lastHole;
+        let timeUp = false;
+        let score = 0;
+        let timeLeft = 30;
+        let timerId;
+
+        function randomTime(min, max) {
+            return Math.round(Math.random() * (max - min) + min);
+        }
+
+        function randomHole(holes) {
+            const idx = Math.floor(Math.random() * holes.length);
+            const hole = holes[idx];
+            if (hole === lastHole) {
+                return randomHole(holes);
+            }
+            lastHole = hole;
+            return hole;
+        }
+
+        function peep() {
+            const time = randomTime(400, 1000);
+            const hole = randomHole(holes);
+            const mole = hole.querySelector('.mole');
+
+            mole.classList.add('up');
+            mole.classList.remove('bonked');
+
+            setTimeout(() => {
+                mole.classList.remove('up');
+                if (!timeUp) peep();
+            }, time);
+        }
+
+        function startGame() {
+            if(timerId) clearInterval(timerId);
+            scoreBoard.textContent = 0;
+            timeBoard.textContent = 30;
+            timeUp = false;
+            score = 0;
+            timeLeft = 30;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('startBtn').textContent = "Playing...";
+
+            peep();
+
+            timerId = setInterval(() => {
+                timeLeft--;
+                timeBoard.textContent = timeLeft;
+                if(timeLeft <= 0) {
+                    clearInterval(timerId);
+                    timeUp = true;
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('startBtn').textContent = "Start Game";
+                    alert('Game Over! Your score: ' + score);
+                }
+            }, 1000);
+        }
+
+        function bonk(e) {
+            if(!e.isTrusted) return; // cheater!
+            if(this.classList.contains('bonked')) return; // Already hit
+
+            score++;
+            this.classList.remove('up');
+            this.classList.add('bonked');
+            scoreBoard.textContent = score;
+        }
+
+        moles.forEach(mole => mole.addEventListener('click', bonk));
+        moles.forEach(mole => mole.addEventListener('touchstart', bonk)); // Mobile support
+
+    </script>
+</body>
+</html>

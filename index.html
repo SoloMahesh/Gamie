@@ -80,7 +80,7 @@
                                         class="text-gray-400 dark:text-[#ad92c9] flex border-none bg-black/5 dark:bg-[#362348] items-center justify-center pl-3 pr-0 rounded-l-lg border-r-0">
                                         <span class="material-symbols-outlined">search</span>
                                     </div>
-                                    <input
+                                    <input id="game-search"
                                         class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-800 dark:text-white focus:outline-0 focus:ring-0 border-none bg-black/5 dark:bg-[#362348] focus:border-none h-full placeholder:text-gray-400 dark:placeholder:text-[#ad92c9] px-2 md:px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
                                         placeholder="Search" value="" />
                                 </div>
@@ -113,7 +113,7 @@
                                                 class="text-white/80 text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal">
                                                 No stress, only fun.</h2>
                                         </div>
-                                        <button
+                                        <button onclick="document.getElementById('explore-library').scrollIntoView({behavior: 'smooth'})"
                                             class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em]">
                                             <span class="truncate">Explore Games</span>
                                         </button>
@@ -121,69 +121,94 @@
                                 </div>
                             </div>
                         </section>
-                        <section>
+                        <section id="explore-library">
                             <h2
                                 class="text-gray-800 dark:text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-10">
                                 Explore Our Library</h2>
-                            <div class="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-4 p-4">
-                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                            <div id="games-grid" class="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-4 p-4">
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
                                     data-alt="A futuristic soldier in armor running through a cosmic battlefield"
                                     href="games/cosmic-raiders.html"
-                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuBPB7WqcsyJwt7ggNgSsJJ2RpJoHARHBuUpTDEXBZ9bsZFbYoboMuR4_O0ZPk0-eVI7KoNh1tLWIBPpIjlQxlcpmHs37saRBHt8iMmktqo5N6Q1rvppOsaa90MnRRJrMSdXkITRQ7qWGMh_25lzrtf3SsnGhX2LYVb83q0KA6rIiyKy3gRTaKVWLN7YmzeKmFEphi_7kzI2cYI6kK5iz2Q8GRZl7HSCV30zBycvRbCPJBLaPLl5JOTqaXd7ePaO0iB-LG6kwhqMPqs");'>
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=600");'>
                                     <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Cosmic
                                         Raiders</p>
                                 </a>
-                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
                                     data-alt="A mystical creature guarding an enchanted, glowing forest" href="games/food-catcher.html"
-                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuAKGO_MAYjauxj4CDlpcorPji8JZ2pPeuZLA6Z7bTroSd-pqq0j0Zj78vbEUQ9mYNOGH1FbioItMtoI_HXyYiQIXchWXAOllT6s13El4LELJfxfbJASOdHAsdCrX9HMhnKkZfFMqO9bu4_uIZyITa6q3UnI7HNtLEtkHoNbw43wB_iY1GyOvPlN__lxKlZY_wCpevjxFT2uAspYP8P9qqd8U0S5v5zOcKbGtqwgqg9Yct77mrd6UzwnjcrmNmQwgcFZEIut-u8UKtI");'>
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuBKrJ4IBSJ-3zdtC-cGMHQCyW63gdcha9CmJTJhahbt2RqGGA33jsLGOTtJpFMi1RVakxdHVflNIx0g78mHgju_A3nkXmAKF5P7tmgkHibmwNT06ivXP-Pje2xImw80qGX7Ie9kvDocEPtUOupIXvUjZqp-jWFgM0cvvS-OHI5CGweCa2AIUbbOdWppA3mIrbFljMbh-n8_ZPkUJlN5SQSE5_p4ygJJQji2z9IniCCohxhA8YneonhBY6HCkgb9byxxJQqvRI5x7NU");'>
                                     <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Food Catcher</p>
                                 </a>
-                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
                                     data-alt="A sleek sports car drifting through a city at night with neon lights"
                                     href="games/neon-racer.html"
                                     style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuCgQOlKTxSTQrr32YEOrMUDXi9UR_rN9WNxVF-bHSSIH-My0gbipTmSAVAKc1RkjW6b_-G6_PZFdMAvGkc1cOjB7-OuYoonHI_9dtKvxPKy5oDUC4MaSMU0XordSNGyrVe1ohG_MAwt3jETn1HN2GV2c2Kv0tz_rPdIeb2XFtbxeiw-uVVAVLyj2iREmOKejv3dKXS2WyDja8Z1_1WgY430ZVgyhU-xGVcAV9T4WdDZrk4jKTTix7tbt-gqwUf-q2WqVvKt18NXj_M");'>
                                     <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Neon
                                         Racer</p>
                                 </a>
-                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
                                     data-alt="A cyborg warrior standing in a futuristic, dystopian city" href="games/cybernetic-revolt.html"
                                     style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuDAkt0NeoV2xb0wIkdQ9FRBIKruX3pxg8g-rZ-5-fRIhNvxX2WxYvNngBh6-Z7DTYTYdNfkmUnjyio9vC3pxXdrX_l9M5x70BMrzvxEwgUI7vyOy7d3Q0WKLmk0i29jjh7sdhoRYbeng-Vqi6s2Oz2-EeoDJiUKjpjKMFVfQuRZ2hDoHrENnqL4d5efUKajhVMVBOxy4Yh0v_MpAJy9630EafVo1weJhTqADgRQDF5Lk064gVdh60733wN3c4LR-isvKLxBxEcvNX0");'>
                                     <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">
                                         Cybernetic Revolt</p>
                                 </a>
-                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
                                     data-alt="A majestic dragon flying over a castle surrounded by gold" href="games/forest-guardian.html"
-                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuBKrJ4IBSJ-3zdtC-cGMHQCyW63gdcha9CmJTJhahbt2RqGGA33jsLGOTtJpFMi1RVakxdHVflNIx0g78mHgju_A3nkXmAKF5P7tmgkHibmwNT06ivXP-Pje2xImw80qGX7Ie9kvDocEPtUOupIXvUjZqp-jWFgM0cvvS-OHI5CGweCa2AIUbbOdWppA3mIrbFljMbh-n8_ZPkUJlN5SQSE5_p4ygJJQji2z9IniCCohxhA8YneonhBY6HCkgb9byxxJQqvRI5x7NU");'>
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuAKGO_MAYjauxj4CDlpcorPji8JZ2pPeuZLA6Z7bTroSd-pqq0j0Zj78vbEUQ9mYNOGH1FbioItMtoI_HXyYiQIXchWXAOllT6s13El4LELJfxfbJASOdHAsdCrX9HMhnKkZfFMqO9bu4_uIZyITa6q3UnI7HNtLEtkHoNbw43wB_iY1GyOvPlN__lxKlZY_wCpevjxFT2uAspYP8P9qqd8U0S5v5zOcKbGtqwgqg9Yct77mrd6UzwnjcrmNmQwgcFZEIut-u8UKtI");'>
                                     <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Forest Guardian</p>
                                 </a>
-                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
                                     data-alt="A deep-sea diver discovering a mysterious underwater city" href="games/block-breaker.html"
-                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuAbEM7WGEdZ6xKOBN0rdDTPne7p-hyMW6dMhyMyH39vZYcx-7yHxcR1cJ8fZ0ueqqAbpcEsCasRKbELJKTaSMQ_bum3cABliddk2psERvHDkeTNX8I3QI5K4XuZjukVus-zUawSKIKM-g0oEXPqLw_cHE65d0KYAkPoUigNTKRWeUHa2ykFYNu1n9CAuu4iYD0d_XXv6uoM5XK75lre-BxP_NZ6oxQETtem_93_t1CQ6IRi4Nj6nWrC5PNAfxU4zoDLKS9gCcFV7P8");'>
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://images.unsplash.com/photo-1516117172878-fd2c41f4a759?auto=format&fit=crop&q=80&w=600");'>
                                     <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Block Breaker</p>
                                 </a>
-                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
                                     data-alt="A steampunk airship flying through clouds towards a floating island"
                                     href="games/classic-snake.html"
-                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuCoEp_S_JKdslEFGfoRk4zyYjO_N1ryoLe6h2oq1kuOMBj1q2oZ0949z22POelM1D0JAhiLWfVlaGc5C61ZsGbg4g_u7UVHRnv5wVU62Xwb-tkDk7JrFAQ59amxs86me8wCYluvnRxxqDFQvYy3qTu6Mjo8rX0sYlcQ3Ex6zwmeCZs767PLwVB8Bx_r3_AHaydbtN-ByeVQG4_tvjwQ-dW63c7C-eIk6FEgYmO5OBBMO6ufX4luGTpXHAriS_29AIbecckVZ5fwc_0");'>
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=600");'>
                                     <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Classic Snake</p>
                                 </a>
-                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
                                     data-alt="An abstract representation of quantum particles and energy fields"
                                     href="games/2048-puzzle.html"
                                     style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuDfQXzUcHxdyGq1_G8yESbLNca_N9z7NB8a4FHGQ4flTwgs1MWzB-OM-ITNpUvoesMtZgpisr3MHeIdif5sZAmjMNB68SwedPC6JEoc5NhqPgua2xcWuohXfpsIbkQ1xbvAYYpcgXMqZveeK5VylEQUZlxjQNJ3l-tczGEM_mxGBWid_I8abSu_dXB-rmf5IpNNV3A3zVDzG5UEtNhjijiAXUuSSXYV30nCzEGQh8_GbxJjVlSbZk0FkdO1O16jVdP58sEhaZ2K02E");'>
                                     <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">2048 Puzzle</p>
                                 </a>
-                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
                                     data-alt="A viking longship sailing through a stormy sea with mountains in the background"
                                     href="games/candy-crush.html"
-                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuALRLMSCpZq8x3tjdcXUu_w2W5gfjQnAkVSEbVfQ9nNWOLjm5ldxCYSVo4-gZ8l4fLzTmgGmPiiHypt20zCC7HeNDrwa9s3Id6-Noyg5ZjlmpbNs1hMrVsA6FQVfb_NDScqUMMvwatkZ7V5jtpWfcD_q0pXRI0AQ_9oINuBBNbn16Tvkdp08M9zK1UbV4-c06JkWn0h1l9-U0c-9Pl4hYmKZtsfQkBnP4Lhao16p26Dm8yJ-rJmtkPJ_tLyTysSjTu87PnW1Xrmrek");'>
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://images.unsplash.com/photo-1616012480717-fd9867059ca0?auto=format&fit=crop&q=80&w=600");'>
                                     <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Candy crush</p>
                                 </a>
-                                <a class="bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
                                     data-alt="A retro 8-bit arcade screen with pixelated characters" href="games/space-shooter.html"
                                     style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuCnzXtmDOsT4qmQmAKCmA6G0mKSSvtf2tDn5rdE9h7FQJmLPX9KgydaQV215vZVJd0A6aSpbLD1j_vJTD2lnTfrz0DLdCcxF66i_nbOZMIXibuQ2OA89IdkjDPWAjJ82-3mY-y6XP-1Ij6kIdMk1AtpGw6DpGBcqFQPg5mTzR_MnibsU73FzK3fdVlUl9kpQdoa1oHNbXj4D-ntYA36-M64orkVHtX5hldOcG3cqfr0eI1WseGq6joufBjwbS0QOAuAplknmBxwReY");'>
                                     <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">
                                         Space Shooter</p>
+                                </a>
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="A colorful grid of memory cards with various symbols" href="games/memory-match.html"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://images.unsplash.com/photo-1633511090164-b43840ea1607?auto=format&fit=crop&q=80&w=600");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Memory Match</p>
+                                </a>
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="A tall tower of colorful blocks reaching into the sky" href="games/tower-stack.html"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://images.unsplash.com/photo-1542621323-be453184eb76?auto=format&fit=crop&q=80&w=600");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Tower Stack</p>
+                                </a>
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="A cartoon mole popping out of a hole in a green field" href="games/whack-a-mole.html"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://images.unsplash.com/photo-1627856014759-0a25121b66b3?auto=format&fit=crop&q=80&w=600");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Whack-a-Mole</p>
+                                </a>
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="A pixel art bird flying between green pipes" href="games/flappy-bird.html"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?auto=format&fit=crop&q=80&w=600");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Flappy Bird Clone</p>
+                                </a>
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="Four colorful electronic buttons arranged in a circle" href="games/simon-says.html"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&q=80&w=600");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Simon Says</p>
                                 </a>
                             </div>
                         </section>
@@ -244,6 +269,21 @@
             </div>
         </div>
     </div>
+    <script>
+        document.getElementById('game-search').addEventListener('input', function (e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const games = document.querySelectorAll('.game-card');
+
+            games.forEach(game => {
+                const title = game.querySelector('p').textContent.toLowerCase();
+                if (title.includes(searchTerm)) {
+                    game.style.display = 'flex';
+                } else {
+                    game.style.display = 'none';
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
