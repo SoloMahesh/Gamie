@@ -172,6 +172,20 @@
             border-radius: 2px;
         }
 
+        /* Touch controls */
+        .touch-controls {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            padding: 0 40px;
+            justify-content: space-between;
+            pointer-events: none;
+            box-sizing: border-box;
+            z-index: 100;
+        }
+
         @media (max-width: 600px) {
             h1 {
                 font-size: 2.5rem;
@@ -195,6 +209,29 @@
                 flex-wrap: wrap;
                 justify-content: center;
             }
+            .touch-controls {
+                display: flex;
+            }
+        }
+
+        .control-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(0, 242, 254, 0.2);
+            border: 2px solid #00f2fe;
+            border-radius: 50%;
+            color: #00f2fe;
+            font-size: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            pointer-events: auto;
+        }
+
+        .control-btn:active {
+            background: rgba(0, 242, 254, 0.5);
+            transform: scale(0.95);
         }
     </style>
 </head>
@@ -202,6 +239,11 @@
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
         <div class="road-lines" id="roadLines"></div>
+
+        <div class="touch-controls">
+            <button class="control-btn" id="btnLeft">◀</button>
+            <button class="control-btn" id="btnRight">▶</button>
+        </div>
         
         <div id="startScreen" class="screen">
             <h1>NEON RACER</h1>
@@ -759,6 +801,21 @@
         window.addEventListener('keyup', (e) => {
             keys[e.key] = false;
         });
+
+        // Touch controls
+        const btnLeft = document.getElementById('btnLeft');
+        const btnRight = document.getElementById('btnRight');
+
+        function addTouchListener(btn, key) {
+            if (!btn) return;
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+            btn.addEventListener('mousedown', (e) => { e.preventDefault(); keys[key] = true; });
+            btn.addEventListener('mouseup', (e) => { e.preventDefault(); keys[key] = false; });
+        }
+
+        addTouchListener(btnLeft, 'ArrowLeft');
+        addTouchListener(btnRight, 'ArrowRight');
         
         startBtn.addEventListener('click', startGame);
         restartBtn.addEventListener('click', startGame);
