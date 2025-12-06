@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Courier New', monospace; touch-action: none; }
+        canvas { border: 2px solid white; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+        h1 { margin-bottom: 10px; }
+        .score { position: absolute; top: 50px; font-size: 3rem; font-weight: bold; pointer-events: none; }
+        .controls { position: absolute; bottom: 20px; font-size: 0.8rem; opacity: 0.5; }
+
+        @media (max-width: 600px) {
+            canvas { width: 90vw; height: 120vw; } /* Portrait mode for mobile */
+        }
+    </style>
+</head>
+<body>
+    <h1>PONG</h1>
+    <div class="score"><span id="score1">0</span> : <span id="score2">0</span></div>
+    <canvas id="gameCanvas"></canvas>
+    <div class="controls">Touch & Drag to Move Paddle</div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = 600;
+        let height = 400;
+        let isMobile = false;
+
+        // Resize logic
+        function resize() {
+            if (window.innerWidth < 600) {
+                isMobile = true;
+                width = 300;
+                height = 500; // Vertical pong for mobile
+            } else {
+                isMobile = false;
+                width = 600;
+                height = 400;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            resetBall();
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        const paddleWidth = isMobile ? 60 : 10;
+        const paddleHeight = isMobile ? 10 : 60;
+
+        const player = {
+            x: isMobile ? width/2 - paddleWidth/2 : 10,
+            y: isMobile ? height - 20 : height/2 - paddleHeight/2,
+            width: paddleWidth,
+            height: paddleHeight,
+            score: 0
+        };
+
+        const ai = {
+            x: isMobile ? width/2 - paddleWidth/2 : width - 20,
+            y: isMobile ? 10 : height/2 - paddleHeight/2,
+            width: paddleWidth,
+            height: paddleHeight,
+            score: 0,
+            speed: 4
+        };
+
+        const ball = {
+            x: width/2,
+            y: height/2,
+            radius: 5,
+            speed: 5,
+            dx: 5,
+            dy: 5
+        };
+
+        function drawRect(x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, w, h);
+        }
+
+        function drawCircle(x, y, r, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI*2, false);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawNet() {
+            if (isMobile) {
+                for (let i = 0; i <= width; i+=15) {
+                    drawRect(i, height/2 - 1, 10, 2, "white");
+                }
+            } else {
+                for (let i = 0; i <= height; i+=15) {
+                    drawRect(width/2 - 1, i, 2, 10, "white");
+                }
+            }
+        }
+
+        function resetBall() {
+            ball.x = width/2;
+            ball.y = height/2;
+            ball.dx = -ball.dx;
+            ball.speed = 5;
+        }
+
+        function update() {
+            // Move ball
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Wall collision
+            if (isMobile) {
+                // Side walls
+                if (ball.x + ball.radius > width || ball.x - ball.radius < 0) {
+                    ball.dx = -ball.dx;
+                }
+
+                // Score points (Top/Bottom)
+                if (ball.y - ball.radius < 0) {
+                    player.score++;
+                    resetBall();
+                } else if (ball.y + ball.radius > height) {
+                    ai.score++;
+                    resetBall();
+                }
+            } else {
+                // Top/Bottom walls
+                if (ball.y + ball.radius > height || ball.y - ball.radius < 0) {
+                    ball.dy = -ball.dy;
+                }
+
+                // Score points (Left/Right)
+                if (ball.x - ball.radius < 0) {
+                    ai.score++;
+                    resetBall();
+                } else if (ball.x + ball.radius > width) {
+                    player.score++;
+                    resetBall();
+                }
+            }
+
+            document.getElementById('score1').innerText = player.score;
+            document.getElementById('score2').innerText = ai.score;
+
+            // AI Movement
+            if (isMobile) {
+                // Horizontal AI
+                let center = ai.x + ai.width/2;
+                if (center < ball.x - 10) ai.x += ai.speed;
+                else if (center > ball.x + 10) ai.x -= ai.speed;
+                // Clamp
+                ai.x = Math.max(0, Math.min(width - ai.width, ai.x));
+            } else {
+                // Vertical AI
+                let center = ai.y + ai.height/2;
+                if (center < ball.y - 10) ai.y += ai.speed;
+                else if (center > ball.y + 10) ai.y -= ai.speed;
+                // Clamp
+                ai.y = Math.max(0, Math.min(height - ai.height, ai.y));
+            }
+
+            // Paddle Collision
+            let playerPaddle = player;
+            let aiPaddle = ai;
+
+            if (collision(ball, player)) {
+                // Hit player
+                let collidePoint = isMobile ? ball.x - (player.x + player.width/2) : ball.y - (player.y + player.height/2);
+                collidePoint = collidePoint / (isMobile ? player.width/2 : player.height/2);
+
+                let angleRad = (Math.PI/4) * collidePoint;
+
+                let direction = isMobile ? (ball.y < height/2 ? 1 : -1) : (ball.x < width/2 ? 1 : -1);
+
+                if (isMobile) {
+                    ball.dx = ball.speed * Math.sin(angleRad);
+                    ball.dy = -ball.speed * Math.cos(angleRad); // Always go up
+                } else {
+                    ball.dx = ball.speed * Math.cos(angleRad); // Always go right
+                    ball.dy = ball.speed * Math.sin(angleRad);
+                }
+                ball.speed += 0.5;
+            }
+
+            if (collision(ball, ai)) {
+                // Hit AI
+                let collidePoint = isMobile ? ball.x - (ai.x + ai.width/2) : ball.y - (ai.y + ai.height/2);
+                collidePoint = collidePoint / (isMobile ? ai.width/2 : ai.height/2);
+                let angleRad = (Math.PI/4) * collidePoint;
+
+                if (isMobile) {
+                    ball.dx = ball.speed * Math.sin(angleRad);
+                    ball.dy = ball.speed * Math.cos(angleRad); // Always go down
+                } else {
+                    ball.dx = -ball.speed * Math.cos(angleRad); // Always go left
+                    ball.dy = ball.speed * Math.sin(angleRad);
+                }
+                ball.speed += 0.5;
+            }
+        }
+
+        function collision(b, p) {
+            p.top = p.y;
+            p.bottom = p.y + p.height;
+            p.left = p.x;
+            p.right = p.x + p.width;
+
+            b.top = b.y - b.radius;
+            b.bottom = b.y + b.radius;
+            b.left = b.x - b.radius;
+            b.right = b.x + b.radius;
+
+            return b.right > p.left && b.bottom > p.top && b.left < p.right && b.top < p.bottom;
+        }
+
+        function render() {
+            drawRect(0, 0, width, height, "#000");
+            drawNet();
+            drawRect(player.x, player.y, player.width, player.height, "white");
+            drawRect(ai.x, ai.y, ai.width, ai.height, "white");
+            drawCircle(ball.x, ball.y, ball.radius, "white");
+        }
+
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Input handling
+        canvas.addEventListener("mousemove", movePaddle);
+        canvas.addEventListener("touchmove", movePaddle, {passive: false});
+
+        function movePaddle(evt) {
+            evt.preventDefault();
+            let rect = canvas.getBoundingClientRect();
+            let root = document.documentElement;
+
+            if (evt.touches) {
+                var touch = evt.touches[0];
+                var mouseX = touch.clientX - rect.left - root.scrollLeft;
+                var mouseY = touch.clientY - rect.top - root.scrollTop;
+            } else {
+                var mouseX = evt.clientX - rect.left - root.scrollLeft;
+                var mouseY = evt.clientY - rect.top - root.scrollTop;
+            }
+
+            if (isMobile) {
+                player.x = mouseX - player.width/2;
+                // Clamp
+                if (player.x < 0) player.x = 0;
+                if (player.x > width - player.width) player.x = width - player.width;
+            } else {
+                player.y = mouseY - player.height/2;
+                // Clamp
+                if (player.y < 0) player.y = 0;
+                if (player.y > height - player.height) player.y = height - player.height;
+            }
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rock Paper Scissors</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #e0e0e0; margin: 0; }
+        h1 { font-size: 2.5rem; margin-bottom: 30px; color: #333; }
+
+        .game-area {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 50px;
+        }
+
+        .player-box {
+            text-align: center;
+        }
+
+        .emoji-display {
+            font-size: 6rem;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0% { transform: translateY(0); }
+            25% { transform: translateY(-20px); }
+            50% { transform: translateY(0); }
+            75% { transform: translateY(-20px); }
+            100% { transform: translateY(0); }
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+        }
+
+        .choice-btn {
+            font-size: 2.5rem;
+            padding: 15px;
+            border: none;
+            background: white;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .choice-btn:hover { transform: scale(1.1); }
+        .choice-btn:active { transform: scale(0.9); }
+
+        .result {
+            margin-top: 30px;
+            font-size: 2rem;
+            font-weight: bold;
+            height: 50px;
+        }
+
+        .score-board {
+            position: absolute;
+            top: 20px;
+            font-size: 1.5rem;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="score-board">
+        You: <span id="user-score">0</span> - CPU: <span id="cpu-score">0</span>
+    </div>
+
+    <h1>Rock Paper Scissors</h1>
+
+    <div class="game-area">
+        <div class="player-box">
+            <div>You</div>
+            <div class="emoji-display" id="user-choice">✊</div>
+        </div>
+        <div class="player-box">
+            <div>CPU</div>
+            <div class="emoji-display" id="cpu-choice">✊</div>
+        </div>
+    </div>
+
+    <div class="result" id="result">Choose your weapon!</div>
+
+    <div class="controls">
+        <button class="choice-btn" onclick="play('rock')">✊</button>
+        <button class="choice-btn" onclick="play('paper')">✋</button>
+        <button class="choice-btn" onclick="play('scissors')">✌️</button>
+    </div>
+
+    <script>
+        const userChoiceDisplay = document.getElementById('user-choice');
+        const cpuChoiceDisplay = document.getElementById('cpu-choice');
+        const resultDisplay = document.getElementById('result');
+        const userScoreDisplay = document.getElementById('user-score');
+        const cpuScoreDisplay = document.getElementById('cpu-score');
+
+        let userScore = 0;
+        let cpuScore = 0;
+        let isPlaying = false;
+
+        const choices = {
+            rock: '✊',
+            paper: '✋',
+            scissors: '✌️'
+        };
+
+        const options = ['rock', 'paper', 'scissors'];
+
+        function play(userSelection) {
+            if (isPlaying) return;
+            isPlaying = true;
+
+            // Reset to rock
+            userChoiceDisplay.innerText = '✊';
+            cpuChoiceDisplay.innerText = '✊';
+            resultDisplay.innerText = "Fighting...";
+
+            // Shake animation
+            userChoiceDisplay.classList.add('shake');
+            cpuChoiceDisplay.classList.add('shake');
+
+            setTimeout(() => {
+                userChoiceDisplay.classList.remove('shake');
+                cpuChoiceDisplay.classList.remove('shake');
+
+                const cpuSelection = options[Math.floor(Math.random() * 3)];
+
+                userChoiceDisplay.innerText = choices[userSelection];
+                cpuChoiceDisplay.innerText = choices[cpuSelection];
+
+                determineWinner(userSelection, cpuSelection);
+                isPlaying = false;
+            }, 500);
+        }
+
+        function determineWinner(user, cpu) {
+            if (user === cpu) {
+                resultDisplay.innerText = "It's a Draw!";
+                resultDisplay.style.color = "#555";
+            } else if (
+                (user === 'rock' && cpu === 'scissors') ||
+                (user === 'paper' && cpu === 'rock') ||
+                (user === 'scissors' && cpu === 'paper')
+            ) {
+                resultDisplay.innerText = "You Win!";
+                resultDisplay.style.color = "#2ecc71";
+                userScore++;
+                userScoreDisplay.innerText = userScore;
+            } else {
+                resultDisplay.innerText = "You Lose!";
+                resultDisplay.style.color = "#e74c3c";
+                cpuScore++;
+                cpuScoreDisplay.innerText = cpuScore;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piano Tiles</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #fff; font-family: 'Segoe UI', sans-serif; touch-action: none; display: flex; justify-content: center; }
+        canvas { display: block; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.2); }
+        #score { position: absolute; top: 20px; font-size: 3rem; color: #ff0055; font-weight: bold; pointer-events: none; text-shadow: 2px 2px white; }
+        #startScreen, #gameOver { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 10; text-align: center; }
+        .hidden { display: none !important; }
+        h1 { font-size: 3rem; margin-bottom: 20px; }
+        button { padding: 15px 40px; font-size: 1.5rem; background: #ff0055; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="score">0</div>
+
+    <div id="startScreen">
+        <h1>PIANO TILES</h1>
+        <p style="font-size: 1.2rem; margin-bottom: 30px;">Don't tap the white tiles!</p>
+        <button onclick="startGame()">START</button>
+    </div>
+
+    <div id="gameOver" class="hidden">
+        <h1>FAILED</h1>
+        <p style="font-size: 1.5rem;">Score: <span id="finalScore">0</span></p>
+        <button onclick="startGame()">RETRY</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        const COLS = 4;
+        let colWidth;
+        let rowHeight;
+
+        let tiles = [];
+        let score = 0;
+        let speed = 5;
+        let gameRunning = false;
+        let offset = 0;
+
+        function resize() {
+            width = Math.min(window.innerWidth, 500);
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            colWidth = width / COLS;
+            rowHeight = height / 4;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Tile {
+            constructor(row) {
+                this.row = row; // virtual row index (0 is bottom visible)
+                this.col = Math.floor(Math.random() * COLS);
+                this.y = height - (row + 1) * rowHeight;
+                this.clicked = false;
+                this.color = "#000";
+            }
+
+            draw(yOffset) {
+                if (this.clicked) {
+                    ctx.fillStyle = "#aaa"; // Clicked color
+                } else {
+                    ctx.fillStyle = this.color;
+                }
+                ctx.fillRect(this.col * colWidth, this.y + yOffset, colWidth - 1, rowHeight - 1);
+
+                // Draw lines
+                ctx.strokeStyle = "#ccc";
+                ctx.strokeRect(this.col * colWidth, this.y + yOffset, colWidth, rowHeight);
+            }
+        }
+
+        function startGame() {
+            resize();
+            tiles = [];
+            score = 0;
+            speed = 5; // Base speed pixels per frame
+            offset = 0;
+            document.getElementById('score').innerText = 0;
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameOver').classList.add('hidden');
+
+            // Init tiles
+            for (let i = 0; i < 6; i++) {
+                let t = new Tile(i);
+                // Adjust y based on logic: row 0 is at bottom
+                // Initial positions should be fixed
+                t.y = height - (i + 1) * rowHeight;
+                tiles.push(t);
+            }
+
+            // First tile is start tile (yellow)
+            tiles[0].color = "#ffff00";
+            tiles[0].isStart = true;
+
+            gameRunning = true;
+            loop();
+        }
+
+        function loop() {
+            if (!gameRunning) return;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw grid lines
+            ctx.strokeStyle = "#ccc";
+            for (let i = 1; i < COLS; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * colWidth, 0);
+                ctx.lineTo(i * colWidth, height);
+                ctx.stroke();
+            }
+
+            // Logic if start tile clicked, start moving
+            if (score > 0) {
+                offset += speed;
+                speed += 0.005; // Acceleration
+            }
+
+            // Check missed tiles
+            // Bottom-most unclicked tile
+            let bottomTile = tiles[0];
+            if (bottomTile.y + offset > height) {
+                // Tile went off screen
+                if (!bottomTile.clicked) {
+                    gameOver();
+                    return;
+                } else {
+                    // Remove tile and add new one
+                    tiles.shift();
+                    // Add new tile at top
+                    let lastTile = tiles[tiles.length - 1];
+                    let newTile = new Tile(lastTile.row + 1);
+                    newTile.y = lastTile.y - rowHeight;
+                    tiles.push(newTile);
+                }
+            }
+
+            // Draw tiles
+            tiles.forEach(t => t.draw(offset));
+
+            requestAnimationFrame(loop);
+        }
+
+        function handleClick(e) {
+            if (!gameRunning) return;
+
+            e.preventDefault();
+            let rect = canvas.getBoundingClientRect();
+            let clickX, clickY;
+
+            if (e.touches) {
+                clickX = e.touches[0].clientX - rect.left;
+                clickY = e.touches[0].clientY - rect.top;
+            } else {
+                clickX = e.clientX - rect.left;
+                clickY = e.clientY - rect.top;
+            }
+
+            // Find which tile was clicked
+            // We only care about the lowest unclicked tile
+            let targetTile = null;
+            for (let t of tiles) {
+                if (!t.clicked) {
+                    targetTile = t;
+                    break;
+                }
+            }
+
+            if (!targetTile) return;
+
+            let tileY = targetTile.y + offset;
+            let tileX = targetTile.col * colWidth;
+
+            // Check collision with tile rect
+            if (clickY >= tileY && clickY <= tileY + rowHeight &&
+                clickX >= tileX && clickX <= tileX + colWidth) {
+
+                targetTile.clicked = true;
+                score++;
+                document.getElementById('score').innerText = score;
+
+                // Play sound or effect?
+
+            } else {
+                // Tapped white space or wrong column -> Game Over
+                // But only if we are tapping in the valid row area?
+                // Strict mode: any tap outside correct tile is fail.
+
+                // Allow some leniency or just fail?
+                // Piano tiles usually fails instantly on white tap.
+
+                // Check if tap is within the vertical bounds of the target tile row
+                if (clickY >= tileY && clickY <= tileY + rowHeight) {
+                    // Wrong column
+                    gameOver();
+                    // Draw red error
+                    ctx.fillStyle = "red";
+                    let col = Math.floor(clickX / colWidth);
+                    ctx.fillRect(col * colWidth, tileY, colWidth, rowHeight);
+                }
+            }
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('gameOver').classList.remove('hidden');
+        }
+
+        canvas.addEventListener('mousedown', handleClick);
+        canvas.addEventListener('touchstart', handleClick, {passive: false});
+
+    </script>
+</body>
+</html>
