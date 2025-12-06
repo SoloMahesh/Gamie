@@ -61,11 +61,90 @@
             background: #0ff;
             color: #000;
         }
+
+        /* Touch controls */
+        .touch-controls {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            padding: 0 20px;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+
+        .dpad {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: auto;
+        }
+
+        .middle {
+            display: flex;
+            gap: 40px;
+        }
+
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 255, 255, 0.2);
+            border: 2px solid #0ff;
+            border-radius: 50%;
+            color: #0ff;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            margin: 5px;
+        }
+
+        .control-btn:active {
+            background: rgba(0, 255, 255, 0.5);
+        }
+
+        .shoot-btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 0, 255, 0.2);
+            border: 2px solid #f0f;
+            border-radius: 50%;
+            pointer-events: auto;
+        }
+
+        .shoot-btn:active {
+            background: rgba(255, 0, 255, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .touch-controls {
+                display: flex;
+            }
+            #ui {
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <canvas id="gameCanvas"></canvas>
     <div id="ui">Score: <span id="score">0</span> | Lives: <span id="lives">3</span></div>
+
+    <div class="touch-controls">
+        <div class="dpad">
+            <button class="control-btn" id="btnUp">▲</button>
+            <div class="middle">
+                <button class="control-btn" id="btnLeft">◀</button>
+                <button class="control-btn" id="btnRight">▶</button>
+            </div>
+            <button class="control-btn" id="btnDown">▼</button>
+        </div>
+        <button class="control-btn shoot-btn" id="btnShoot">●</button>
+    </div>
     <div id="gameOver">
         <h2>GAME OVER</h2>
         <p>Final Score: <span id="finalScore">0</span></p>
@@ -363,6 +442,38 @@
                 e.preventDefault();
             }
         });
+
+        // Responsive canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (player) {
+                player.x = Math.min(player.x, canvas.width - player.width);
+                player.y = Math.min(player.y, canvas.height - player.height);
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Touch controls
+        const btnUp = document.getElementById('btnUp');
+        const btnDown = document.getElementById('btnDown');
+        const btnLeft = document.getElementById('btnLeft');
+        const btnRight = document.getElementById('btnRight');
+        const btnShoot = document.getElementById('btnShoot');
+
+        function addTouchListener(btn, key) {
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+            btn.addEventListener('mousedown', (e) => { e.preventDefault(); keys[key] = true; });
+            btn.addEventListener('mouseup', (e) => { e.preventDefault(); keys[key] = false; });
+        }
+
+        addTouchListener(btnUp, 'ArrowUp');
+        addTouchListener(btnDown, 'ArrowDown');
+        addTouchListener(btnLeft, 'ArrowLeft');
+        addTouchListener(btnRight, 'ArrowRight');
+        addTouchListener(btnShoot, ' ');
 
         // Initialize stars for start screen
         createStars();
