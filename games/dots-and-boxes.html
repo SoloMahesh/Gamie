@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dots and Boxes</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #fafafa; user-select: none; }
+        h1 { margin-bottom: 20px; }
+        .game-info { display: flex; justify-content: space-between; width: 300px; font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; }
+        .p1-score { color: #e74c3c; }
+        .p2-score { color: #3498db; }
+        .active { text-decoration: underline; transform: scale(1.1); }
+
+        .grid {
+            display: grid;
+            /* 5 cols of dots + 4 cols of spaces = 9 cols total in grid definition? No. */
+            /* We draw using div borders or specific items */
+            /* Let's use SVG for cleaner lines/dots */
+            width: 300px;
+            height: 300px;
+            background: #fff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        /* SVG approach is best for hit detection on lines */
+        svg { width: 100%; height: 100%; }
+        line { stroke: #eee; stroke-width: 10; stroke-linecap: round; cursor: pointer; transition: stroke 0.2s; }
+        line:hover { stroke: #ddd; }
+        line.taken-p1 { stroke: #e74c3c; }
+        line.taken-p2 { stroke: #3498db; }
+
+        circle { fill: #333; }
+        rect.box { fill: transparent; transition: fill 0.5s; }
+        rect.box-p1 { fill: rgba(231, 76, 60, 0.5); }
+        rect.box-p2 { fill: rgba(52, 152, 219, 0.5); }
+
+        button { margin-top: 20px; padding: 10px 20px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Dots and Boxes</h1>
+    <div class="game-info">
+        <span id="p1-score" class="p1-score active">P1: 0</span>
+        <span id="p2-score" class="p2-score">P2: 0</span>
+    </div>
+
+    <div class="grid">
+        <svg id="game-svg" viewBox="0 0 400 400"></svg>
+    </div>
+
+    <button onclick="initGame()">Restart</button>
+
+    <script>
+        const svg = document.getElementById('game-svg');
+        const p1ScoreEl = document.getElementById('p1-score');
+        const p2ScoreEl = document.getElementById('p2-score');
+
+        const ROWS = 4;
+        const COLS = 4;
+        const SPACING = 100;
+
+        let lines = []; // { type: 'h'/'v', r, c, owner: 0/1/2 }
+        let boxes = []; // { r, c, owner: 0/1/2 }
+        let currentPlayer = 1;
+        let scores = { 1: 0, 2: 0 };
+        let gameActive = true;
+
+        function initGame() {
+            svg.innerHTML = '';
+            lines = [];
+            boxes = [];
+            currentPlayer = 1;
+            scores = { 1: 0, 2: 0 };
+            gameActive = true;
+            updateUI();
+
+            // Create Boxes (background)
+            for (let r = 0; r < ROWS - 1; r++) {
+                for (let c = 0; c < COLS - 1; c++) {
+                    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    rect.setAttribute("x", c * SPACING + 10);
+                    rect.setAttribute("y", r * SPACING + 10);
+                    rect.setAttribute("width", SPACING - 20);
+                    rect.setAttribute("height", SPACING - 20);
+                    rect.setAttribute("class", "box");
+                    rect.dataset.r = r;
+                    rect.dataset.c = c;
+                    svg.appendChild(rect);
+                    boxes.push({ r, c, owner: 0, el: rect });
+                }
+            }
+
+            // Create Horizontal Lines
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS - 1; c++) {
+                    createLine(c * SPACING, r * SPACING, (c + 1) * SPACING, r * SPACING, 'h', r, c);
+                }
+            }
+
+            // Create Vertical Lines
+            for (let r = 0; r < ROWS - 1; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    createLine(c * SPACING, r * SPACING, c * SPACING, (r + 1) * SPACING, 'v', r, c);
+                }
+            }
+
+            // Create Dots (Top layer)
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    circle.setAttribute("cx", c * SPACING);
+                    circle.setAttribute("cy", r * SPACING);
+                    circle.setAttribute("r", 8);
+                    svg.appendChild(circle);
+                }
+            }
+
+            // Center ViewBox
+            // 300x300 internal
+            const totalW = (COLS-1)*SPACING;
+            const totalH = (ROWS-1)*SPACING;
+            // Pad
+            svg.setAttribute("viewBox", `-20 -20 ${totalW + 40} ${totalH + 40}`);
+        }
+
+        function createLine(x1, y1, x2, y2, type, r, c) {
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", x1);
+            line.setAttribute("y1", y1);
+            line.setAttribute("x2", x2);
+            line.setAttribute("y2", y2);
+
+            const lineData = { type, r, c, owner: 0, el: line };
+            lines.push(lineData);
+
+            line.addEventListener('click', () => handleLineClick(lineData));
+            line.addEventListener('touchstart', (e) => { e.preventDefault(); handleLineClick(lineData); });
+
+            svg.appendChild(line);
+        }
+
+        function handleLineClick(lineData) {
+            if (!gameActive || lineData.owner !== 0) return;
+
+            lineData.owner = currentPlayer;
+            lineData.el.classList.add(`taken-p${currentPlayer}`);
+
+            // Check for completed boxes
+            let boxMade = false;
+
+            if (lineData.type === 'h') {
+                // Check box below (r, c)
+                if (checkBox(lineData.r, lineData.c)) boxMade = true;
+                // Check box above (r-1, c)
+                if (lineData.r > 0 && checkBox(lineData.r - 1, lineData.c)) boxMade = true;
+            } else {
+                // Check box right (r, c)
+                if (checkBox(lineData.r, lineData.c)) boxMade = true;
+                // Check box left (r, c-1)
+                if (lineData.c > 0 && checkBox(lineData.r, lineData.c - 1)) boxMade = true;
+            }
+
+            if (boxMade) {
+                // Player keeps turn
+                checkWin();
+            } else {
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+            }
+            updateUI();
+        }
+
+        function checkBox(r, c) {
+            // Find 4 lines for box(r,c)
+            // Top: h, r, c
+            // Bottom: h, r+1, c
+            // Left: v, r, c
+            // Right: v, r, c+1
+
+            const top = lines.find(l => l.type === 'h' && l.r === r && l.c === c);
+            const bottom = lines.find(l => l.type === 'h' && l.r === r + 1 && l.c === c);
+            const left = lines.find(l => l.type === 'v' && l.r === r && l.c === c);
+            const right = lines.find(l => l.type === 'v' && l.r === r && l.c === c + 1);
+
+            if (top.owner !== 0 && bottom.owner !== 0 && left.owner !== 0 && right.owner !== 0) {
+                // Box complete
+                const box = boxes.find(b => b.r === r && b.c === c);
+                if (box.owner === 0) {
+                    box.owner = currentPlayer;
+                    box.el.classList.add(`box-p${currentPlayer}`);
+                    scores[currentPlayer]++;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function updateUI() {
+            p1ScoreEl.innerText = `P1: ${scores[1]}`;
+            p2ScoreEl.innerText = `P2: ${scores[2]}`;
+
+            if (currentPlayer === 1) {
+                p1ScoreEl.classList.add('active');
+                p2ScoreEl.classList.remove('active');
+            } else {
+                p2ScoreEl.classList.add('active');
+                p1ScoreEl.classList.remove('active');
+            }
+        }
+
+        function checkWin() {
+            if (scores[1] + scores[2] === (ROWS-1)*(COLS-1)) {
+                gameActive = false;
+                let winner = scores[1] > scores[2] ? "Player 1" : (scores[2] > scores[1] ? "Player 2" : "Tie");
+                setTimeout(() => alert(`Game Over! ${winner} Wins!`), 100);
+            }
+        }
+
+        initGame();
+    </script>
+</body>
+</html>

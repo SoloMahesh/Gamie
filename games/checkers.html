@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkers</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #8d6e63; margin: 0; user-select: none; }
+        h1 { margin-bottom: 20px; color: #3e2723; }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            width: 90vw;
+            max-width: 400px;
+            aspect-ratio: 1;
+            border: 5px solid #3e2723;
+        }
+
+        .cell {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cell.white { background: #efebe9; }
+        .cell.black { background: #5d4037; }
+
+        .piece {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.5);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .piece.red { background: #d32f2f; border: 2px solid #b71c1c; }
+        .piece.black { background: #212121; border: 2px solid #000; }
+        .piece.king::after { content: '👑'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.2rem; }
+
+        .cell.highlight { background: #8bc34a; cursor: pointer; }
+
+        .status { margin-top: 20px; font-size: 1.5rem; font-weight: bold; color: #3e2723; }
+        button { margin-top: 20px; padding: 10px 20px; font-size: 1.2rem; background: #3e2723; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Checkers</h1>
+    <div class="board" id="board"></div>
+    <div class="status" id="status">Red's Turn</div>
+    <button onclick="initGame()">Restart</button>
+
+    <script>
+        const boardEl = document.getElementById('board');
+        const statusEl = document.getElementById('status');
+
+        let board = []; // 8x8 grid
+        let turn = 'red'; // 'red' or 'black'
+        let selectedPiece = null;
+        let validMoves = [];
+
+        function initGame() {
+            // Initialize board
+            board = [];
+            for(let r=0; r<8; r++) {
+                let row = [];
+                for(let c=0; c<8; c++) {
+                    if ((r + c) % 2 === 1) {
+                        if (r < 3) row.push({ color: 'black', king: false });
+                        else if (r > 4) row.push({ color: 'red', king: false });
+                        else row.push(null);
+                    } else {
+                        row.push(null); // White squares unused
+                    }
+                }
+                board.push(row);
+            }
+            turn = 'red';
+            selectedPiece = null;
+            validMoves = [];
+            render();
+        }
+
+        function render() {
+            boardEl.innerHTML = '';
+            statusEl.innerText = `${turn.charAt(0).toUpperCase() + turn.slice(1)}'s Turn`;
+
+            for(let r=0; r<8; r++) {
+                for(let c=0; c<8; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = `cell ${(r+c)%2===0 ? 'white' : 'black'}`;
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+
+                    const piece = board[r][c];
+                    if (piece) {
+                        const pieceEl = document.createElement('div');
+                        pieceEl.className = `piece ${piece.color} ${piece.king ? 'king' : ''}`;
+                        if (selectedPiece && selectedPiece.r === r && selectedPiece.c === c) {
+                            pieceEl.style.border = "4px solid yellow";
+                        }
+                        pieceEl.onclick = (e) => {
+                            e.stopPropagation();
+                            handlePieceClick(r, c);
+                        };
+                        cell.appendChild(pieceEl);
+                    }
+
+                    // Highlight moves
+                    const move = validMoves.find(m => m.r === r && m.c === c);
+                    if (move) {
+                        cell.classList.add('highlight');
+                        cell.onclick = () => executeMove(move);
+                    }
+
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        function handlePieceClick(r, c) {
+            const piece = board[r][c];
+            if (piece.color !== turn) return;
+
+            selectedPiece = { r, c };
+            calculateMoves(r, c, piece);
+            render();
+        }
+
+        function calculateMoves(r, c, piece) {
+            validMoves = [];
+            const directions = piece.king ? [[-1, -1], [-1, 1], [1, -1], [1, 1]] : (piece.color === 'red' ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]]);
+
+            // Simple moves
+            for (let d of directions) {
+                const nr = r + d[0];
+                const nc = c + d[1];
+                if (isValidPos(nr, nc) && board[nr][nc] === null) {
+                    // Only if not forced jump? (Simplified rules: no forced jumps enforced for MVP)
+                    validMoves.push({ r: nr, c: nc, type: 'move' });
+                }
+            }
+
+            // Jumps
+            for (let d of directions) {
+                const nr = r + d[0];
+                const nc = c + d[1];
+                const jr = r + d[0] * 2;
+                const jc = c + d[1] * 2;
+
+                if (isValidPos(nr, nc) && board[nr][nc] !== null && board[nr][nc].color !== piece.color &&
+                    isValidPos(jr, jc) && board[jr][jc] === null) {
+                    validMoves.push({ r: jr, c: jc, type: 'jump', killR: nr, killC: nc });
+                }
+            }
+        }
+
+        function isValidPos(r, c) {
+            return r >= 0 && r < 8 && c >= 0 && c < 8;
+        }
+
+        function executeMove(move) {
+            const piece = board[selectedPiece.r][selectedPiece.c];
+
+            // Move piece
+            board[move.r][move.c] = piece;
+            board[selectedPiece.r][selectedPiece.c] = null;
+
+            // Handle Jump
+            if (move.type === 'jump') {
+                board[move.killR][move.killC] = null;
+                // Double jump logic would go here (complex for MVP)
+            }
+
+            // King promotion
+            if ((piece.color === 'red' && move.r === 0) || (piece.color === 'black' && move.r === 7)) {
+                piece.king = true;
+            }
+
+            // Switch turn
+            turn = turn === 'red' ? 'black' : 'red';
+            selectedPiece = null;
+            validMoves = [];
+            render();
+        }
+
+        initGame();
+    </script>
+</body>
+</html>

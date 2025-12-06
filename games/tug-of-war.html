@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tug of War</title>
+    <style>
+        body { margin: 0; background: #333; overflow: hidden; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; height: 100vh; touch-action: none; }
+
+        .side { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; transition: background 0.2s; }
+        #side1 { background: #ff5252; }
+        #side2 { background: #448aff; }
+
+        .tap-btn {
+            width: 150px; height: 150px;
+            background: rgba(255,255,255,0.2);
+            border: 5px solid white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; color: white; font-weight: bold;
+            user-select: none;
+            cursor: pointer;
+        }
+
+        .tap-btn:active { background: rgba(255,255,255,0.5); transform: scale(0.95); }
+
+        #rope-container {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotate(90deg); /* Vertical rope for mobile portrait split */
+            width: 80vh; height: 20px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            pointer-events: none;
+        }
+
+        #knot {
+            width: 40px; height: 40px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px black;
+            transition: left 0.1s ease-out; /* Smooth movement */
+        }
+
+        #winner-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            color: white; z-index: 10;
+        }
+
+        button { padding: 15px 30px; font-size: 1.5rem; border: none; border-radius: 10px; cursor: pointer; margin-top: 20px; }
+
+        @media (min-width: 600px) {
+            body { flex-direction: row; }
+            #rope-container { transform: translate(-50%, -50%); width: 80vw; } /* Horizontal for desktop/tablet landscape */
+        }
+    </style>
+</head>
+<body>
+    <div class="side" id="side1">
+        <div class="tap-btn" onmousedown="pull(-1)" ontouchstart="pull(-1)">TAP</div>
+    </div>
+
+    <div id="rope-container">
+        <div id="knot"></div>
+    </div>
+
+    <div class="side" id="side2">
+        <div class="tap-btn" onmousedown="pull(1)" ontouchstart="pull(1)">TAP</div>
+    </div>
+
+    <div id="winner-screen">
+        <h1 id="winnerText">WINNER!</h1>
+        <button onclick="resetGame()">Play Again</button>
+    </div>
+
+    <script>
+        let position = 50; // 0 to 100
+        let gameActive = true;
+        const knot = document.getElementById('knot');
+        const winnerScreen = document.getElementById('winner-screen');
+        const winnerText = document.getElementById('winnerText');
+
+        function pull(dir) {
+            if (!gameActive) return;
+            // Prevent default touch zoom/scroll
+            if (event.cancelable) event.preventDefault();
+
+            position += dir * 2; // Pull power
+            updatePosition();
+            checkWin();
+        }
+
+        function updatePosition() {
+            // Visual clamping
+            let visualPos = Math.max(0, Math.min(100, position));
+            knot.style.left = visualPos + '%';
+        }
+
+        function checkWin() {
+            if (position <= 10) {
+                endGame("RED WINS!");
+                winnerScreen.style.background = "rgba(255, 82, 82, 0.9)";
+            } else if (position >= 90) {
+                endGame("BLUE WINS!");
+                winnerScreen.style.background = "rgba(68, 138, 255, 0.9)";
+            }
+        }
+
+        function endGame(msg) {
+            gameActive = false;
+            winnerText.innerText = msg;
+            winnerScreen.style.display = "flex";
+        }
+
+        function resetGame() {
+            position = 50;
+            gameActive = true;
+            updatePosition();
+            winnerScreen.style.display = "none";
+        }
+
+        // Prevent multi-touch zoom
+        document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+    </script>
+</body>
+</html>
