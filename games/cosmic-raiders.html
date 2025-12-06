@@ -11,6 +11,7 @@
             padding: 0;
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none; /* Disable default touch actions */
         }
 
         body {
@@ -27,12 +28,21 @@
             position: relative;
             width: 100%;
             max-width: 800px;
-            height: 90vh;
-            max-height: 600px;
-            border-radius: 20px;
+            height: 100vh; /* Full height on mobile */
+            max-height: 800px;
+            border-radius: 0; /* Remove radius on full screen for mobile */
             overflow: hidden;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            border: none;
+        }
+
+        @media (min-width: 801px) {
+            #gameContainer {
+                 height: 90vh;
+                 max-height: 600px;
+                 border-radius: 20px;
+                 border: 2px solid rgba(255, 255, 255, 0.1);
+            }
         }
 
         #gameCanvas {
@@ -69,6 +79,7 @@
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 20px rgba(255, 0, 204, 0.3);
             letter-spacing: 2px;
+            text-align: center;
         }
 
         .btn {
@@ -84,6 +95,7 @@
             font-weight: bold;
             letter-spacing: 1px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 20;
         }
 
         .btn:hover {
@@ -184,13 +196,13 @@
                 font-size: 0.9rem;
             }
             .touch-controls {
-                display: flex;
+                display: flex !important;
             }
         }
 
         /* Touch controls */
         .touch-controls {
-            display: none;
+            display: none; /* Hidden on desktop by default */
             position: absolute;
             bottom: 20px;
             left: 0;
@@ -203,48 +215,71 @@
             z-index: 100;
         }
 
+        /* Force show controls on touch devices or small screens if desired,
+           or use JS to detect touch capability. Here using media query for mobile layout. */
+        @media (hover: none) and (pointer: coarse) {
+            .touch-controls {
+                display: flex !important;
+            }
+        }
+
         .dpad {
             display: flex;
             flex-direction: column;
             align-items: center;
             pointer-events: auto;
-        }
-
-        .middle {
-            display: flex;
-            gap: 40px;
+            position: relative;
+            width: 150px;
+            height: 150px;
         }
 
         .control-btn {
             width: 50px;
             height: 50px;
-            background: rgba(255, 0, 204, 0.2);
-            border: 2px solid #ff00cc;
+            background: rgba(255, 0, 204, 0.1);
+            border: 2px solid rgba(255, 0, 204, 0.5);
             border-radius: 50%;
-            color: #fff;
+            color: rgba(255, 255, 255, 0.8);
             font-size: 24px;
             display: flex;
             justify-content: center;
             align-items: center;
             user-select: none;
-            margin: 5px;
+            position: absolute;
+            backdrop-filter: blur(4px);
+            transition: background 0.1s;
         }
 
+        .control-btn#btnUp { top: 0; left: 50px; }
+        .control-btn#btnDown { bottom: 0; left: 50px; }
+        .control-btn#btnLeft { top: 50px; left: 0; }
+        .control-btn#btnRight { top: 50px; right: 0; }
+
         .control-btn:active {
-            background: rgba(255, 0, 204, 0.5);
+            background: rgba(255, 0, 204, 0.4);
+            transform: scale(0.95);
         }
 
         .shoot-btn {
-            width: 70px;
-            height: 70px;
-            background: rgba(51, 51, 255, 0.2);
-            border: 2px solid #33f;
+            width: 80px;
+            height: 80px;
+            background: rgba(51, 51, 255, 0.1);
+            border: 2px solid rgba(51, 51, 255, 0.5);
             border-radius: 50%;
             pointer-events: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 20px;
+            backdrop-filter: blur(4px);
+            margin-bottom: 20px;
+            margin-right: 10px;
         }
 
         .shoot-btn:active {
-            background: rgba(51, 51, 255, 0.5);
+            background: rgba(51, 51, 255, 0.4);
+             transform: scale(0.95);
         }
     </style>
 </head>
@@ -255,19 +290,17 @@
 
         <div class="touch-controls">
             <div class="dpad">
-                <button class="control-btn" id="btnUp">▲</button>
-                <div class="middle">
-                    <button class="control-btn" id="btnLeft">◀</button>
-                    <button class="control-btn" id="btnRight">▶</button>
-                </div>
-                <button class="control-btn" id="btnDown">▼</button>
+                <div class="control-btn" id="btnUp"><i class="fas fa-chevron-up"></i></div>
+                <div class="control-btn" id="btnLeft"><i class="fas fa-chevron-left"></i></div>
+                <div class="control-btn" id="btnRight"><i class="fas fa-chevron-right"></i></div>
+                <div class="control-btn" id="btnDown"><i class="fas fa-chevron-down"></i></div>
             </div>
-            <button class="control-btn shoot-btn" id="btnShoot">●</button>
+            <div class="shoot-btn" id="btnShoot"><i class="fas fa-crosshairs"></i></div>
         </div>
         
         <div id="startScreen" class="screen">
             <h1>COSMIC RAIDER</h1>
-            <p class="instructions">Use ARROW KEYS to move and SPACEBAR to shoot</p>
+            <p class="instructions">Use ARROW KEYS / TOUCH to move<br>SPACEBAR / BUTTON to shoot</p>
             <button id="startBtn" class="btn">START MISSION</button>
             <p class="score-display">High Score: <span id="highScore">0</span></p>
         </div>
@@ -294,7 +327,7 @@
         
         let gameRunning = false;
         let score = 0;
-        let highScore = 0; // Removed localStorage usage
+        let highScore = localStorage.getItem('cosmicRaiderHighScore') || 0;
         let stars = [];
         let player = {
             x: 0,
@@ -320,8 +353,11 @@
             const container = document.getElementById('gameContainer');
             canvas.width = container.clientWidth;
             canvas.height = container.clientHeight;
-            player.x = canvas.width / 2 - player.width / 2;
-            player.y = canvas.height - player.height - 20;
+            // Reposition player if needed, but ensure they don't jump weirdly during gameplay
+            if (!gameRunning) {
+                player.x = canvas.width / 2 - player.width / 2;
+                player.y = canvas.height - player.height - 20;
+            }
         }
         
         // Create stars background
@@ -438,18 +474,19 @@
             // Score
             ctx.fillStyle = '#ffcc00';
             ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'left';
             ctx.fillText(`Score: ${score}`, 20, 30);
             
             // Health bar
             ctx.fillStyle = '#444';
-            ctx.fillRect(20, canvas.height - 40, 200, 20);
+            ctx.fillRect(20, 50, 200, 20); // Moved to top left below score for better mobile vis
             ctx.fillStyle = player.health > 60 ? '#00ff00' : player.health > 30 ? '#ffff00' : '#ff0000';
-            ctx.fillRect(20, canvas.height - 40, player.health * 2, 20);
+            ctx.fillRect(20, 50, player.health * 2, 20);
             ctx.strokeStyle = '#fff';
-            ctx.strokeRect(20, canvas.height - 40, 200, 20);
+            ctx.strokeRect(20, 50, 200, 20);
             ctx.fillStyle = '#fff';
             ctx.font = '14px Arial';
-            ctx.fillText('Health', 25, canvas.height - 45);
+            ctx.fillText('Health', 25, 65);
         }
         
         // Spawn enemy
@@ -625,7 +662,7 @@
             
             // Gradually increase difficulty
             if (score > 0 && score % 100 === 0) {
-                player.speed = Math.min(8, player.speed + 0.1);
+                player.speed = Math.min(8, player.speed + 0.05); // Reduced increment
             }
         }
         
@@ -680,6 +717,7 @@
             gameRunning = false;
             if (score > highScore) {
                 highScore = score;
+                localStorage.setItem('cosmicRaiderHighScore', highScore);
             }
             finalScore.textContent = score;
             highScoreElement.textContent = highScore;
@@ -710,10 +748,19 @@
 
         function addTouchListener(btn, key) {
             if (!btn) return;
-            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
-            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
-            btn.addEventListener('mousedown', (e) => { e.preventDefault(); keys[key] = true; });
-            btn.addEventListener('mouseup', (e) => { e.preventDefault(); keys[key] = false; });
+            const handler = (e) => {
+                e.preventDefault();
+                // Only set true on start/down
+                if(e.type === 'touchstart' || e.type === 'mousedown') keys[key] = true;
+                // Only set false on end/up
+                if(e.type === 'touchend' || e.type === 'mouseup' || e.type === 'mouseleave') keys[key] = false;
+            };
+
+            btn.addEventListener('touchstart', handler, {passive: false});
+            btn.addEventListener('touchend', handler, {passive: false});
+            btn.addEventListener('mousedown', handler);
+            btn.addEventListener('mouseup', handler);
+            btn.addEventListener('mouseleave', handler);
         }
 
         addTouchListener(btnUp, 'ArrowUp');
@@ -736,4 +783,3 @@
     </script>
 </body>
 </html>
-

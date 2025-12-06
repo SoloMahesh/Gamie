@@ -5,29 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Classic Snake</title>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: 'Courier New', monospace; color: #0f0; }
-        #gameCanvas { display: block; margin: 0 auto; background: #111; border: 2px solid #0f0; box-shadow: 0 0 20px #0f0; }
-        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Courier New', monospace; color: #0f0; touch-action: none; }
+        #gameContainer { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        #gameCanvas { display: block; background: #111; border: 2px solid #0f0; box-shadow: 0 0 20px #0f0; }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 10; }
         .hidden { display: none !important; }
-        h1 { font-size: 40px; color: #0f0; text-shadow: 0 0 10px #0f0; }
-        button { background: transparent; border: 2px solid #0f0; padding: 15px 30px; color: #0f0; font-size: 20px; cursor: pointer; border-radius: 5px; margin-top: 20px; font-family: inherit; font-weight: bold; }
-        button:hover { background: #0f0; color: #000; }
+        h1 { font-size: 40px; color: #0f0; text-shadow: 0 0 10px #0f0; margin-bottom: 20px; }
+        button { background: transparent; border: 2px solid #0f0; padding: 10px 20px; color: #0f0; font-size: 18px; cursor: pointer; border-radius: 5px; margin: 10px; font-family: inherit; font-weight: bold; }
+        button:hover, button.selected { background: #0f0; color: #000; }
+
+        .difficulty-selector { display: flex; gap: 10px; margin-bottom: 20px; }
+
+        .ui-top { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; font-size: 20px; pointer-events: none; }
+        .speed-label { font-size: 14px; opacity: 0.7; }
 
         .touch-controls { display: none; position: absolute; bottom: 20px; left: 0; width: 100%; justify-content: center; align-items: center; z-index: 5; pointer-events: none; }
-        .dpad { position: relative; width: 150px; height: 150px; pointer-events: auto; }
-        .btn { position: absolute; width: 50px; height: 50px; background: rgba(0, 255, 0, 0.2); border: 1px solid #0f0; display: flex; justify-content: center; align-items: center; font-size: 24px; user-select: none; }
-        .btn:active { background: rgba(0, 255, 0, 0.5); }
-        .up { top: 0; left: 50px; }
-        .down { bottom: 0; left: 50px; }
-        .left { top: 50px; left: 0; }
-        .right { top: 50px; right: 0; }
+        .dpad { position: relative; width: 180px; height: 180px; pointer-events: auto; }
+        .btn { position: absolute; width: 60px; height: 60px; background: rgba(0, 255, 0, 0.1); border: 2px solid rgba(0, 255, 0, 0.5); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; user-select: none; color: rgba(0, 255, 0, 0.8); backdrop-filter: blur(2px); transition: background 0.1s; }
+        .btn:active { background: rgba(0, 255, 0, 0.4); transform: scale(0.95); }
+        .up { top: 0; left: 60px; }
+        .down { bottom: 0; left: 60px; }
+        .left { top: 60px; left: 0; }
+        .right { top: 60px; right: 0; }
 
-        @media (max-width: 768px) { .touch-controls { display: flex; } }
+        @media (max-width: 1024px) { .touch-controls { display: flex; } }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-    <div style="position: absolute; top: 10px; left: 10px; font-size: 20px;">Score: <span id="score">0</span></div>
+    <div id="gameContainer">
+        <div class="ui-top">
+            <div>Score: <span id="score">0</span></div>
+            <div class="speed-label">Speed: <span id="speedDisplay">Normal</span></div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+    </div>
 
     <div class="touch-controls">
         <div class="dpad">
@@ -40,14 +51,19 @@
 
     <div id="startScreen" class="screen">
         <h1>SNAKE</h1>
-        <p>Eat food. Don't hit walls or yourself.</p>
-        <button id="startBtn">START</button>
+        <p>Select Difficulty:</p>
+        <div class="difficulty-selector">
+            <button class="diff-btn" data-speed="slow">Slow</button>
+            <button class="diff-btn selected" data-speed="normal">Normal</button>
+            <button class="diff-btn" data-speed="fast">Fast</button>
+        </div>
+        <button id="startBtn">START GAME</button>
     </div>
 
     <div id="gameOverScreen" class="screen hidden">
         <h1>GAME OVER</h1>
         <p>Score: <span id="finalScore">0</span></p>
-        <button id="restartBtn">RETRY</button>
+        <button id="restartBtn">MAIN MENU</button>
     </div>
 
     <script>
@@ -66,47 +82,70 @@
         let score = 0;
         let gameRunning = false;
         let lastTime = 0;
-        let speed = 10; // moves per second
+        let baseSpeed = 10;
+        let currentSpeed = 10;
         let timeSinceLastMove = 0;
+
+        // Difficulty settings
+        const SPEEDS = {
+            slow: 6,
+            normal: 10,
+            fast: 15
+        };
+        let selectedDifficulty = 'normal';
 
         function resize() {
             // Keep aspect ratio roughly or just fit screen with padding
-            const size = Math.min(window.innerWidth, window.innerHeight) - 40;
+            // Calculate max available space
+            const maxWidth = window.innerWidth - 20;
+            const maxHeight = window.innerHeight - 200; // Space for UI and controls
+
+            const size = Math.min(maxWidth, maxHeight, 600); // Max 600px
             const cols = Math.floor(size / GRID_SIZE);
 
             canvas.width = cols * GRID_SIZE;
             canvas.height = cols * GRID_SIZE;
             TILE_COUNT_X = cols;
             TILE_COUNT_Y = cols;
-
-            // Center canvas
-            canvas.style.marginTop = (window.innerHeight - canvas.height) / 2 + 'px';
         }
         window.addEventListener('resize', resize);
         resize();
 
         function init() {
-            snake = [{ x: 10, y: 10 }];
+            resize(); // Ensure correct sizing
+            snake = [{ x: Math.floor(TILE_COUNT_X/2), y: Math.floor(TILE_COUNT_Y/2) }];
             dx = 1;
-            dy = 0;
+            dy = 0; // Start moving right
             score = 0;
             spawnFood();
             gameRunning = true;
+
+            // Set speed based on selection
+            baseSpeed = SPEEDS[selectedDifficulty];
+            currentSpeed = baseSpeed;
+
+            document.getElementById('speedDisplay').innerText = selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1);
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('gameOverScreen').classList.add('hidden');
             document.getElementById('score').innerText = score;
+
             lastTime = performance.now();
             requestAnimationFrame(loop);
         }
 
         function spawnFood() {
-            food.x = Math.floor(Math.random() * TILE_COUNT_X);
-            food.y = Math.floor(Math.random() * TILE_COUNT_Y);
-            // Check collision with snake
-            for(let part of snake) {
-                if(part.x === food.x && part.y === food.y) {
-                    spawnFood();
-                    break;
+            let validPosition = false;
+            while(!validPosition) {
+                food.x = Math.floor(Math.random() * TILE_COUNT_X);
+                food.y = Math.floor(Math.random() * TILE_COUNT_Y);
+
+                validPosition = true;
+                // Check collision with snake
+                for(let part of snake) {
+                    if(part.x === food.x && part.y === food.y) {
+                        validPosition = false;
+                        break;
+                    }
                 }
             }
         }
@@ -136,7 +175,7 @@
                 document.getElementById('score').innerText = score;
                 spawnFood();
                 // Increase speed slightly
-                speed = Math.min(20, 10 + score * 0.5);
+                currentSpeed = Math.min(baseSpeed * 2, baseSpeed + score * 0.2);
             } else {
                 snake.pop();
             }
@@ -156,15 +195,35 @@
                 // Head eyes
                 if (i === 0) {
                      ctx.fillStyle = '#000';
-                     ctx.fillRect(part.x * GRID_SIZE + 4, part.y * GRID_SIZE + 4, 4, 4);
-                     ctx.fillRect(part.x * GRID_SIZE + 12, part.y * GRID_SIZE + 4, 4, 4);
+                     // Determine eye position based on direction
+                     let eyeOffsetX1 = 4, eyeOffsetY1 = 4;
+                     let eyeOffsetX2 = 12, eyeOffsetY2 = 4;
+
+                     if (dx === 1) { // Right
+                         eyeOffsetX1 = 12; eyeOffsetY1 = 4;
+                         eyeOffsetX2 = 12; eyeOffsetY2 = 12;
+                     } else if (dx === -1) { // Left
+                         eyeOffsetX1 = 4; eyeOffsetY1 = 4;
+                         eyeOffsetX2 = 4; eyeOffsetY2 = 12;
+                     } else if (dy === 1) { // Down
+                         eyeOffsetX1 = 4; eyeOffsetY1 = 12;
+                         eyeOffsetX2 = 12; eyeOffsetY2 = 12;
+                     } else if (dy === -1) { // Up
+                         eyeOffsetX1 = 4; eyeOffsetY1 = 4;
+                         eyeOffsetX2 = 12; eyeOffsetY2 = 4;
+                     }
+
+                     ctx.fillRect(part.x * GRID_SIZE + eyeOffsetX1, part.y * GRID_SIZE + eyeOffsetY1, 4, 4);
+                     ctx.fillRect(part.x * GRID_SIZE + eyeOffsetX2, part.y * GRID_SIZE + eyeOffsetY2, 4, 4);
                      ctx.fillStyle = '#0f0';
                 }
             }
 
             // Draw Food
             ctx.fillStyle = '#f00';
-            ctx.fillRect(food.x * GRID_SIZE, food.y * GRID_SIZE, GRID_SIZE - 2, GRID_SIZE - 2);
+            ctx.beginPath();
+            ctx.arc(food.x * GRID_SIZE + GRID_SIZE/2, food.y * GRID_SIZE + GRID_SIZE/2, GRID_SIZE/2 - 2, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         function loop(timestamp) {
@@ -173,7 +232,7 @@
             lastTime = timestamp;
 
             timeSinceLastMove += dt;
-            if(timeSinceLastMove > 1 / speed) {
+            if(timeSinceLastMove > 1 / currentSpeed) {
                 update();
                 timeSinceLastMove = 0;
             }
@@ -188,17 +247,49 @@
         }
 
         // Input
+        let nextDx = 1;
+        let nextDy = 0;
+
+        function handleInput(dir) {
+            if (dir === 'up' && dy === 0) { nextDx = 0; nextDy = -1; }
+            if (dir === 'down' && dy === 0) { nextDx = 0; nextDy = 1; }
+            if (dir === 'left' && dx === 0) { nextDx = -1; nextDy = 0; }
+            if (dir === 'right' && dx === 0) { nextDx = 1; nextDy = 0; }
+
+            // Immediate update for responsiveness if not conflicting 180 turn
+            // But usually better to queue it for the next update step to prevent self-collision on rapid keypresses.
+            // Simplified here: update globals, but `update()` function will use them.
+            // To be safe against 180 turns within same frame:
+            if (dir === 'up' && dy !== 1) { dx = 0; dy = -1; }
+            if (dir === 'down' && dy !== -1) { dx = 0; dy = 1; }
+            if (dir === 'left' && dx !== 1) { dx = -1; dy = 0; }
+            if (dir === 'right' && dx !== -1) { dx = 1; dy = 0; }
+        }
+
         document.addEventListener('keydown', e => {
             switch(e.key) {
-                case 'ArrowUp': if(dy === 0) { dx = 0; dy = -1; } break;
-                case 'ArrowDown': if(dy === 0) { dx = 0; dy = 1; } break;
-                case 'ArrowLeft': if(dx === 0) { dx = -1; dy = 0; } break;
-                case 'ArrowRight': if(dx === 0) { dx = 1; dy = 0; } break;
+                case 'ArrowUp': handleInput('up'); break;
+                case 'ArrowDown': handleInput('down'); break;
+                case 'ArrowLeft': handleInput('left'); break;
+                case 'ArrowRight': handleInput('right'); break;
             }
         });
 
+        // Difficulty Selection
+        const diffBtns = document.querySelectorAll('.diff-btn');
+        diffBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                diffBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedDifficulty = btn.dataset.speed;
+            });
+        });
+
         document.getElementById('startBtn').addEventListener('click', init);
-        document.getElementById('restartBtn').addEventListener('click', init);
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+        });
 
         // Touch
         const btnUp = document.getElementById('btnUp');
@@ -206,24 +297,19 @@
         const btnLeft = document.getElementById('btnLeft');
         const btnRight = document.getElementById('btnRight');
 
-        function addTouch(elem, dirX, dirY) {
-            elem.addEventListener('touchstart', e => {
+        function addTouch(elem, dir) {
+            const handler = (e) => {
                 e.preventDefault();
-                if(dirX !== 0 && dx === 0) { dx = dirX; dy = 0; }
-                if(dirY !== 0 && dy === 0) { dx = 0; dy = dirY; }
-            });
-            // Also support click for testing
-            elem.addEventListener('mousedown', e => {
-                e.preventDefault();
-                if(dirX !== 0 && dx === 0) { dx = dirX; dy = 0; }
-                if(dirY !== 0 && dy === 0) { dx = 0; dy = dirY; }
-            });
+                handleInput(dir);
+            };
+            elem.addEventListener('touchstart', handler, {passive: false});
+            elem.addEventListener('mousedown', handler);
         }
 
-        addTouch(btnUp, 0, -1);
-        addTouch(btnDown, 0, 1);
-        addTouch(btnLeft, -1, 0);
-        addTouch(btnRight, 1, 0);
+        addTouch(btnUp, 'up');
+        addTouch(btnDown, 'down');
+        addTouch(btnLeft, 'left');
+        addTouch(btnRight, 'right');
 
         resize();
         // Static render
@@ -232,7 +318,7 @@
         ctx.fillStyle = '#0f0';
         ctx.font = "20px Courier New";
         ctx.textAlign = "center";
-        ctx.fillText("PRESS START", canvas.width/2, canvas.height/2);
+        ctx.fillText("SELECT DIFFICULTY", canvas.width/2, canvas.height/2);
     </script>
 </body>
 </html>

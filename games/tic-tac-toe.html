@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #2c3e50; color: white; margin: 0; }
+        h1 { margin-bottom: 20px; font-size: 3rem; }
+        .game-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #34495e; padding: 10px; border-radius: 10px; width: 90vw; max-width: 400px; aspect-ratio: 1; }
+        .cell { background: #ecf0f1; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: bold; cursor: pointer; color: #2c3e50; user-select: none; }
+        .cell:hover { background: #bdc3c7; }
+        .cell.x { color: #e74c3c; }
+        .cell.o { color: #3498db; }
+        .status { margin-top: 20px; font-size: 1.5rem; height: 30px; }
+        button { margin-top: 20px; padding: 10px 20px; font-size: 1.2rem; background: #2ecc71; border: none; border-radius: 5px; color: white; cursor: pointer; }
+        button:hover { background: #27ae60; }
+        .mode-select { margin-bottom: 20px; }
+        .mode-btn { background: #34495e; margin: 0 5px; padding: 8px 15px; font-size: 1rem; }
+        .mode-btn.active { background: #3498db; }
+    </style>
+</head>
+<body>
+    <h1>Tic Tac Toe</h1>
+    <div class="mode-select">
+        <button class="mode-btn active" id="pve-btn">Vs AI</button>
+        <button class="mode-btn" id="pvp-btn">2 Player</button>
+    </div>
+    <div class="game-board" id="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+    <div class="status" id="status">X's Turn</div>
+    <button onclick="resetGame()">Restart Game</button>
+
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const statusDisplay = document.getElementById('status');
+        const pveBtn = document.getElementById('pve-btn');
+        const pvpBtn = document.getElementById('pvp-btn');
+
+        let currentPlayer = 'X';
+        let gameState = ["", "", "", "", "", "", "", "", ""];
+        let gameActive = true;
+        let isAI = true;
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        function handleCellClick(clickedCellEvent) {
+            const clickedCell = clickedCellEvent.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+
+            if (gameState[clickedCellIndex] !== "" || !gameActive) return;
+
+            handleCellPlayed(clickedCell, clickedCellIndex);
+            handleResultValidation();
+
+            if (gameActive && isAI && currentPlayer === 'O') {
+                setTimeout(makeAIMove, 500);
+            }
+        }
+
+        function handleCellPlayed(clickedCell, clickedCellIndex) {
+            gameState[clickedCellIndex] = currentPlayer;
+            clickedCell.innerHTML = currentPlayer;
+            clickedCell.classList.add(currentPlayer.toLowerCase());
+        }
+
+        function handleResultValidation() {
+            let roundWon = false;
+            for (let i = 0; i <= 7; i++) {
+                const winCondition = winningConditions[i];
+                let a = gameState[winCondition[0]];
+                let b = gameState[winCondition[1]];
+                let c = gameState[winCondition[2]];
+                if (a === '' || b === '' || c === '') continue;
+                if (a === b && b === c) {
+                    roundWon = true;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                statusDisplay.innerHTML = `${currentPlayer} Wins!`;
+                gameActive = false;
+                return;
+            }
+
+            let roundDraw = !gameState.includes("");
+            if (roundDraw) {
+                statusDisplay.innerHTML = `Draw!`;
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = currentPlayer === "X" ? "O" : "X";
+            statusDisplay.innerHTML = `${currentPlayer}'s Turn`;
+        }
+
+        function makeAIMove() {
+            if (!gameActive) return;
+
+            // Simple AI: Random empty cell
+            // Enhance: check win, check block
+
+            let move = -1;
+
+            // 1. Try to win
+            move = findBestMove('O');
+
+            // 2. Block X
+            if (move === -1) move = findBestMove('X');
+
+            // 3. Random
+            if (move === -1) {
+                const emptyCells = gameState.map((val, idx) => val === "" ? idx : null).filter(val => val !== null);
+                if (emptyCells.length > 0) {
+                    move = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                }
+            }
+
+            if (move !== -1) {
+                const cell = document.querySelector(`.cell[data-index="${move}"]`);
+                handleCellPlayed(cell, move);
+                handleResultValidation();
+            }
+        }
+
+        function findBestMove(player) {
+            for (let i = 0; i <= 7; i++) {
+                const [a, b, c] = winningConditions[i];
+                const vals = [gameState[a], gameState[b], gameState[c]];
+                const count = vals.filter(v => v === player).length;
+                const empty = vals.filter(v => v === "").length;
+
+                if (count === 2 && empty === 1) {
+                    if (gameState[a] === "") return a;
+                    if (gameState[b] === "") return b;
+                    if (gameState[c] === "") return c;
+                }
+            }
+            return -1;
+        }
+
+        function resetGame() {
+            gameActive = true;
+            currentPlayer = "X";
+            gameState = ["", "", "", "", "", "", "", "", ""];
+            statusDisplay.innerHTML = "X's Turn";
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.innerHTML = "";
+                cell.classList.remove('x', 'o');
+            });
+        }
+
+        // Mode switching
+        pveBtn.addEventListener('click', () => {
+            isAI = true;
+            pveBtn.classList.add('active');
+            pvpBtn.classList.remove('active');
+            resetGame();
+        });
+
+        pvpBtn.addEventListener('click', () => {
+            isAI = false;
+            pvpBtn.classList.add('active');
+            pveBtn.classList.remove('active');
+            resetGame();
+        });
+
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+    </script>
+</body>
+</html>

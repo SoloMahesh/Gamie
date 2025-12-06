@@ -11,6 +11,7 @@
             padding: 0;
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none; /* Prevent default touch behavior */
         }
 
         :root {
@@ -232,6 +233,7 @@
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
             z-index: 6;
             opacity: 0.9;
+            pointer-events: none; /* Let clicks pass through */
         }
 
         @keyframes fall {
@@ -360,7 +362,7 @@
             </div>
         </div>
         
-        <div class="instructions">Use ← → ARROWS to move | CATCH GOOD FOOD, AVOID JUNK!</div>
+        <div class="instructions">Use ← → ARROWS or SWIPE to move | CATCH GOOD FOOD, AVOID JUNK!</div>
         
         <div class="game-board" id="game-board">
             <div class="basket" id="basket"></div>
@@ -460,11 +462,11 @@
             
             // Handle continuous movement
             if (keysPressed['ArrowLeft']) {
-                basketPosition = Math.max(5, basketPosition - 6);
+                basketPosition = Math.max(5, basketPosition - 1.5); // Slower desktop movement
                 basket.style.left = basketPosition + '%';
             }
             if (keysPressed['ArrowRight']) {
-                basketPosition = Math.min(95, basketPosition + 6);
+                basketPosition = Math.min(95, basketPosition + 1.5);
                 basket.style.left = basketPosition + '%';
             }
             
@@ -604,25 +606,75 @@
         
         restartBtn.addEventListener('click', initGame);
         
-        // Touch controls for mobile
+        // Touch controls for mobile - Improved Sensitivity
         let touchStartX = 0;
+        let lastBasketPosition = 50;
+
         gameBoard.addEventListener('touchstart', (e) => {
+            if (!gameRunning) return;
             touchStartX = e.touches[0].clientX;
+            lastBasketPosition = basketPosition;
         });
         
         gameBoard.addEventListener('touchmove', (e) => {
             if (!gameRunning) return;
             e.preventDefault();
             const touchX = e.touches[0].clientX;
-            const diff = touchX - touchStartX;
-            basketPosition = Math.max(5, Math.min(95, basketPosition + diff/15));
+            const diffX = touchX - touchStartX;
+
+            // Map screen width to basket percentage (0-100)
+            // Multiplier 1.2 to make it slightly more sensitive than 1:1 mapping
+            const sensitivity = 0.15;
+
+            // Calculate new position based on delta
+            // Using a simpler approach: relative movement directly mapped
+            // We want 1px of touch move to move basket by some amount
+            // Board width is variable, so we use percentages.
+
+            const containerWidth = gameBoard.clientWidth;
+            const percentChange = (diffX / containerWidth) * 100 * 1.5; // 1.5x multiplier for sensitivity
+
+            let newPos = lastBasketPosition + percentChange;
+            basketPosition = Math.max(5, Math.min(95, newPos));
+
             basket.style.left = basketPosition + '%';
-            touchStartX = touchX;
+
+            // We don't update touchStartX here for "relative from start" drag style
+            // If we wanted "incremental" drag, we would update touchStartX and use basketPosition as base
+            // But for smooth slider-like feel, updating lastBasketPosition on start and diffing is good,
+            // provided the user doesn't lift finger.
+            // Actually, "follow finger" is best.
         });
+
+        // Better "Follow Finger" Logic
+        // We want the basket to move exactly with the finger, but clamped.
+        // Or we want relative motion. Let's try relative motion with reset on touchstart.
+
+        // Let's refine the touchmove handler to be purely delta-based for responsiveness
+        let previousTouchX = 0;
+
+        gameBoard.addEventListener('touchstart', (e) => {
+             previousTouchX = e.touches[0].clientX;
+        }, {passive: false});
+
+        gameBoard.addEventListener('touchmove', (e) => {
+            if (!gameRunning) return;
+             const currentTouchX = e.touches[0].clientX;
+             const deltaX = currentTouchX - previousTouchX;
+             previousTouchX = currentTouchX;
+
+             const containerWidth = gameBoard.clientWidth;
+             // Convert delta pixels to percentage
+             // sensitivity factor can be tuned. 1.0 means 1:1 movement.
+             const sensitivity = 1.2;
+             const deltaPercent = (deltaX / containerWidth) * 100 * sensitivity;
+
+             basketPosition = Math.max(5, Math.min(95, basketPosition + deltaPercent));
+             basket.style.left = basketPosition + '%';
+        }, {passive: false});
         
         // Start the game
         initGame();
     </script>
 </body>
 </html>
-

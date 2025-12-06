@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower Stack</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #2c3e50; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; touch-action: none; }
+        canvas { display: block; box-shadow: 0 10px 30px rgba(0,0,0,0.3); cursor: pointer; }
+        #score { position: absolute; top: 10%; font-size: 5rem; color: rgba(255,255,255,0.2); font-weight: bold; pointer-events: none; }
+        #instructions { position: absolute; bottom: 10%; color: white; font-size: 1.2rem; opacity: 0.7; pointer-events: none; }
+        #gameOver { position: absolute; background: rgba(0,0,0,0.85); color: white; padding: 40px; border-radius: 20px; text-align: center; display: none; flex-direction: column; gap: 20px; }
+        button { padding: 15px 30px; font-size: 1.2rem; background: #e74c3c; color: white; border: none; border-radius: 50px; cursor: pointer; transition: transform 0.2s; }
+        button:hover { transform: scale(1.05); }
+    </style>
+</head>
+<body>
+    <div id="score">0</div>
+    <div id="instructions">Tap to place block</div>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="gameOver">
+        <h2>Game Over</h2>
+        <p>Score: <span id="finalScore">0</span></p>
+        <button onclick="resetGame()">Try Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        let blocks = [];
+        let currentBlock = null;
+        let score = 0;
+        let gameRunning = true;
+        let direction = 1; // 1 for right, -1 for left
+        let speed = 2;
+        let baseWidth = 200;
+        const blockHeight = 30;
+        let cameraY = 0;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            if(!gameRunning) draw();
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function initGame() {
+            score = 0;
+            blocks = [];
+            cameraY = 0;
+            baseWidth = Math.min(200, width * 0.5);
+            speed = 2;
+
+            // Base block
+            blocks.push({
+                x: (width - baseWidth) / 2,
+                y: height - 100,
+                w: baseWidth,
+                h: blockHeight,
+                color: `hsl(200, 70%, 50%)`
+            });
+
+            spawnNextBlock();
+            gameRunning = true;
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('score').innerText = score;
+            loop();
+        }
+
+        function spawnNextBlock() {
+            const prevBlock = blocks[blocks.length - 1];
+            currentBlock = {
+                x: -prevBlock.w, // Start from left
+                y: prevBlock.y - blockHeight,
+                w: prevBlock.w,
+                h: blockHeight,
+                color: `hsl(${200 + blocks.length * 10}, 70%, 50%)`
+            };
+            direction = 1;
+            // increase speed slightly
+            speed = 3 + (score * 0.1);
+        }
+
+        function placeBlock() {
+            if(!gameRunning) return;
+
+            const prevBlock = blocks[blocks.length - 1];
+            const dist = currentBlock.x - prevBlock.x;
+
+            // Collision logic
+            if (Math.abs(dist) >= currentBlock.w) {
+                gameOver();
+                return;
+            }
+
+            // Trim block
+            let newWidth = currentBlock.w - Math.abs(dist);
+            let newX = currentBlock.x;
+
+            if (dist > 0) { // Block is to the right
+                // Keep the overlapping part
+                // x stays same? No.
+                // If moved too far right, new X is current X, but width shrunk.
+                // Wait, visually we want to align with previous block.
+                // The overlapping segment starts at max(current.x, prev.x)
+                // and ends at min(current.right, prev.right)
+
+                // Simplified:
+                // New block x = currentBlock.x (if dist > 0) is wrong, visual stack must align.
+                // Actually, the new block should physically become the overlapping part.
+
+                newX = currentBlock.x; // Right side cut off
+            } else {
+                // Block is to the left
+                newX = prevBlock.x; // Left side cut off, so x becomes prevBlock.x
+            }
+
+            // Correct logic:
+            // The part that stays is the intersection.
+            const overlapX = Math.max(currentBlock.x, prevBlock.x);
+            const overlapRight = Math.min(currentBlock.x + currentBlock.w, prevBlock.x + prevBlock.w);
+            const overlapWidth = overlapRight - overlapX;
+
+            if (overlapWidth <= 0) {
+                gameOver();
+                return;
+            }
+
+            currentBlock.x = overlapX;
+            currentBlock.w = overlapWidth;
+
+            blocks.push(currentBlock);
+            score++;
+            document.getElementById('score').innerText = score;
+
+            // Move camera down if tower gets too high
+            if (blocks.length > 10) {
+                 // Target camera Y
+            }
+
+            spawnNextBlock();
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('gameOver').style.display = 'flex';
+        }
+
+        function update() {
+            if(!currentBlock) return;
+
+            currentBlock.x += speed * direction;
+
+            // Bounce bounds
+            if (currentBlock.x > width || currentBlock.x + currentBlock.w < 0) {
+                 // For bouncing, we need to detect edges of screen or reasonable bounds
+                 // Let's bounce off edges + buffer
+                 if (currentBlock.x > width - 50) direction = -1;
+                 if (currentBlock.x < -currentBlock.w + 50) direction = 1;
+            }
+
+            // Better bounce logic for playability:
+            // Just oscillate left/right
+            if (currentBlock.x > width) {
+                currentBlock.x = -currentBlock.w;
+            }
+            // Actually, "Stack" style usually bounces.
+            if (currentBlock.x + currentBlock.w > width) direction = -1;
+            if (currentBlock.x < 0) direction = 1;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Camera Logic
+            let targetY = 0;
+            if (blocks.length > 5) {
+                targetY = (blocks.length - 5) * blockHeight;
+            }
+            cameraY += (targetY - cameraY) * 0.1;
+
+            ctx.save();
+            ctx.translate(0, cameraY);
+
+            blocks.forEach(b => {
+                ctx.fillStyle = b.color;
+                ctx.fillRect(b.x, b.y, b.w, b.h);
+                ctx.strokeStyle = "rgba(0,0,0,0.1)";
+                ctx.strokeRect(b.x, b.y, b.w, b.h);
+            });
+
+            if(currentBlock) {
+                ctx.fillStyle = currentBlock.color;
+                ctx.fillRect(currentBlock.x, currentBlock.y, currentBlock.w, currentBlock.h);
+            }
+
+            ctx.restore();
+        }
+
+        function loop() {
+            if(!gameRunning) return;
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        function resetGame() {
+            initGame();
+        }
+
+        // Inputs
+        document.addEventListener('mousedown', placeBlock);
+        document.addEventListener('keydown', (e) => {
+            if(e.code === 'Space') placeBlock();
+        });
+        document.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent zoom
+            placeBlock();
+        }, {passive: false});
+
+        initGame();
+    </script>
+</body>
+</html>

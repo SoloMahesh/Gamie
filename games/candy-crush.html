@@ -9,6 +9,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            touch-action: none; /* Prevent default touch actions like scrolling */
         }
         
         body {
@@ -105,11 +106,12 @@
             width: 80%;
             height: 80%;
             border-radius: 50%;
-            transition: all 0.3s ease;
-            position: relative;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            position: absolute; /* Changed to absolute for animation */
             display: flex;
             align-items: center;
             justify-content: center;
+            z-index: 5;
         }
         
         .candy::before {
@@ -197,6 +199,7 @@
             pointer-events: none;
             opacity: 0;
             animation: floatUp 1s forwards;
+            z-index: 20;
         }
         
         @keyframes floatUp {
@@ -230,8 +233,8 @@
     </div>
     
     <div class="instructions">
-        Match 3 or more candies of the same color to score points!<br>
-        Click on a candy, then click on an adjacent candy to swap them.
+        Swipe or click to match 3 or more candies of the same color!<br>
+        Score points and beat your high score.
     </div>
 
     <script>
@@ -246,6 +249,13 @@
         let isAnimating = false;
         let gameActive = true;
         
+        // Touch handling variables
+        let touchstartX = 0;
+        let touchstartY = 0;
+        let touchendX = 0;
+        let touchendY = 0;
+        let touchedCell = null;
+
         const boardElement = document.getElementById('board');
         const scoreElement = document.getElementById('score');
         const movesElement = document.getElementById('moves');
@@ -296,20 +306,111 @@
                     cell.dataset.row = row;
                     cell.dataset.col = col;
                     
-                    const candy = document.createElement('div');
-                    candy.className = `candy ${board[row][col]}`;
-                    cell.appendChild(candy);
+                    if (board[row][col]) {
+                        const candy = document.createElement('div');
+                        candy.className = `candy ${board[row][col]}`;
+                        cell.appendChild(candy);
+                    }
                     
-                    cell.addEventListener('click', () => handleCellClick(row, col));
+                    // Add click event
+                    cell.addEventListener('mousedown', (e) => handleMouseDown(e, row, col));
+                    cell.addEventListener('touchstart', (e) => handleTouchStart(e, row, col));
+
                     boardElement.appendChild(cell);
                 }
             }
+            // Add global listeners for mouse/touch up/move if needed, mostly handled locally
+            document.addEventListener('mouseup', handleMouseUp);
+            document.addEventListener('touchend', handleTouchEnd);
         }
-        
-        // Handle cell click
-        function handleCellClick(row, col) {
+
+        // --- Interaction Handling (Mouse + Touch) ---
+
+        function handleMouseDown(e, row, col) {
             if (!gameActive || isAnimating) return;
+            touchstartX = e.clientX;
+            touchstartY = e.clientY;
+            touchedCell = { row, col };
+        }
+
+        function handleTouchStart(e, row, col) {
+            if (!gameActive || isAnimating) return;
+            touchstartX = e.changedTouches[0].screenX;
+            touchstartY = e.changedTouches[0].screenY;
+            touchedCell = { row, col };
+        }
+
+        function handleMouseUp(e) {
+            if (!touchedCell || !gameActive || isAnimating) return;
+            touchendX = e.clientX;
+            touchendY = e.clientY;
+            handleGesture();
+            touchedCell = null; // Reset
+        }
+
+        function handleTouchEnd(e) {
+            if (!touchedCell || !gameActive || isAnimating) return;
+            touchendX = e.changedTouches[0].screenX;
+            touchendY = e.changedTouches[0].screenY;
+            handleGesture();
+            touchedCell = null; // Reset
+        }
+
+        function handleGesture() {
+            if(!touchedCell) return;
             
+            const diffX = touchendX - touchstartX;
+            const diffY = touchendY - touchstartY;
+            const threshold = 30; // Min distance for swipe
+
+            let targetRow = touchedCell.row;
+            let targetCol = touchedCell.col;
+
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                // Horizontal
+                if (Math.abs(diffX) > threshold) {
+                    if (diffX > 0) targetCol++;
+                    else targetCol--;
+                    attemptMove(touchedCell.row, touchedCell.col, targetRow, targetCol);
+                } else {
+                     // Tap (Click) Logic fallback
+                     handleCellClick(touchedCell.row, touchedCell.col);
+                }
+            } else {
+                // Vertical
+                if (Math.abs(diffY) > threshold) {
+                    if (diffY > 0) targetRow++;
+                    else targetRow--;
+                    attemptMove(touchedCell.row, touchedCell.col, targetRow, targetCol);
+                } else {
+                    // Tap (Click) Logic fallback
+                    handleCellClick(touchedCell.row, touchedCell.col);
+                }
+            }
+        }
+
+        function attemptMove(row1, col1, row2, col2) {
+            // Check bounds
+            if (row2 < 0 || row2 >= BOARD_SIZE || col2 < 0 || col2 >= BOARD_SIZE) return;
+
+            // Check adjacent (should be implied by swipe logic, but good sanity check)
+            const isAdjacent = (
+                (Math.abs(row1 - row2) === 1 && col1 === col2) ||
+                (Math.abs(col1 - col2) === 1 && row1 === row2)
+            );
+
+            if (isAdjacent) {
+                // Valid swipe direction
+                performSwap(row1, col1, row2, col2);
+                selectedCandy = null; // Deselect if we were selecting
+                const cell = document.querySelector(`.cell[data-row="${row1}"][data-col="${col1}"]`);
+                if(cell) cell.classList.remove('selected');
+
+            }
+        }
+
+        // Handle cell click (Original Logic modified for new input)
+        function handleCellClick(row, col) {
             const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
             
             if (!selectedCandy) {
@@ -334,16 +435,7 @@
                 );
                 
                 if (isAdjacent) {
-                    // Valid move - swap candies
-                    moves--;
-                    updateUI();
-                    
-                    if (moves <= 0) {
-                        endGame();
-                        return;
-                    }
-                    
-                    swapCandies(selectedCandy.row, selectedCandy.col, row, col);
+                    performSwap(selectedCandy.row, selectedCandy.col, row, col);
                     selectedCandy = null;
                 } else {
                     // Not adjacent - select new candy
@@ -352,33 +444,88 @@
                 }
             }
         }
+
+        function performSwap(row1, col1, row2, col2) {
+             moves--;
+             updateUI();
+
+             if (moves <= 0) {
+                 // Allow the last move to complete
+                 setTimeout(() => {
+                     if (moves <= 0) endGame();
+                 }, 1000);
+             }
+
+             swapCandies(row1, col1, row2, col2);
+        }
         
         // Swap two candies
         function swapCandies(row1, col1, row2, col2) {
             isAnimating = true;
             
             // Visual swap
-            const candy1 = document.querySelector(`.cell[data-row="${row1}"][data-col="${col1}"] .candy`);
-            const candy2 = document.querySelector(`.cell[data-row="${row2}"][data-col="${col2}"] .candy`);
+            const cell1 = document.querySelector(`.cell[data-row="${row1}"][data-col="${col1}"]`);
+            const cell2 = document.querySelector(`.cell[data-row="${row2}"][data-col="${col2}"]`);
+            const candy1 = cell1.querySelector('.candy');
+            const candy2 = cell2.querySelector('.candy');
             
-            // Swap in data
-            [board[row1][col1], board[row2][col2]] = [board[row2][col2], board[row1][col1]];
-            
-            // Re-render affected cells
-            renderCell(row1, col1);
-            renderCell(row2, col2);
-            
-            // Check for matches after a short delay
+            // Get positions
+            const rect1 = cell1.getBoundingClientRect();
+            const rect2 = cell2.getBoundingClientRect();
+            const xDiff = rect2.left - rect1.left;
+            const yDiff = rect2.top - rect1.top;
+
+            // Animate
+            candy1.style.transform = `translate(${xDiff}px, ${yDiff}px)`;
+            candy2.style.transform = `translate(${-xDiff}px, ${-yDiff}px)`;
+
             setTimeout(() => {
+                // Swap in data
+                [board[row1][col1], board[row2][col2]] = [board[row2][col2], board[row1][col1]];
+
+                // Reset styles
+                candy1.style.transform = '';
+                candy2.style.transform = '';
+
+                // Re-render affected cells
+                renderCell(row1, col1);
+                renderCell(row2, col2);
+
+                // Check for matches
                 const matches = findMatches();
                 if (matches.length > 0) {
                     removeMatches(matches);
                 } else {
-                    // No matches - swap back
-                    [board[row1][col1], board[row2][col2]] = [board[row2][col2], board[row1][col1]];
-                    renderCell(row1, col1);
-                    renderCell(row2, col2);
-                    isAnimating = false;
+                    // No matches - swap back animation
+                     const cell1Rev = document.querySelector(`.cell[data-row="${row1}"][data-col="${col1}"]`);
+                     const cell2Rev = document.querySelector(`.cell[data-row="${row2}"][data-col="${col2}"]`);
+                     const candy1Rev = cell1Rev.querySelector('.candy');
+                     const candy2Rev = cell2Rev.querySelector('.candy');
+
+                     candy1Rev.style.transform = `translate(${xDiff}px, ${yDiff}px)`;
+                     candy2Rev.style.transform = `translate(${-xDiff}px, ${-yDiff}px)`;
+
+                     // Force reflow
+                     void candy1Rev.offsetWidth;
+
+                     // Trigger animation back
+                     candy1Rev.style.transition = "transform 0.3s ease";
+                     candy2Rev.style.transition = "transform 0.3s ease";
+                     candy1Rev.style.transform = "";
+                     candy2Rev.style.transform = "";
+
+                    setTimeout(() => {
+                        [board[row1][col1], board[row2][col2]] = [board[row2][col2], board[row1][col1]];
+                        renderCell(row1, col1);
+                        renderCell(row2, col2);
+                        isAnimating = false;
+
+                        // If that was the last move and invalid, ensure game ends properly if 0 moves
+                        if (moves <= 0 && findMatches().length === 0) {
+                             endGame();
+                        }
+
+                    }, 300);
                 }
             }, 300);
         }
@@ -387,9 +534,11 @@
         function renderCell(row, col) {
             const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
             cell.innerHTML = '';
-            const candy = document.createElement('div');
-            candy.className = `candy ${board[row][col]}`;
-            cell.appendChild(candy);
+            if (board[row][col]) {
+                const candy = document.createElement('div');
+                candy.className = `candy ${board[row][col]}`;
+                cell.appendChild(candy);
+            }
         }
         
         // Find all matches
@@ -402,10 +551,10 @@
                 let currentColor = board[row][0];
                 
                 for (let col = 1; col < BOARD_SIZE; col++) {
-                    if (board[row][col] === currentColor) {
+                    if (board[row][col] && board[row][col] === currentColor) {
                         count++;
                     } else {
-                        if (count >= 3) {
+                        if (count >= 3 && currentColor) {
                             for (let i = col - count; i < col; i++) {
                                 matches.push({ row, col: i });
                             }
@@ -415,7 +564,7 @@
                     }
                 }
                 
-                if (count >= 3) {
+                if (count >= 3 && currentColor) {
                     for (let i = BOARD_SIZE - count; i < BOARD_SIZE; i++) {
                         matches.push({ row, col: i });
                     }
@@ -428,10 +577,10 @@
                 let currentColor = board[0][col];
                 
                 for (let row = 1; row < BOARD_SIZE; row++) {
-                    if (board[row][col] === currentColor) {
+                    if (board[row][col] && board[row][col] === currentColor) {
                         count++;
                     } else {
-                        if (count >= 3) {
+                        if (count >= 3 && currentColor) {
                             for (let i = row - count; i < row; i++) {
                                 matches.push({ row: i, col });
                             }
@@ -441,7 +590,7 @@
                     }
                 }
                 
-                if (count >= 3) {
+                if (count >= 3 && currentColor) {
                     for (let i = BOARD_SIZE - count; i < BOARD_SIZE; i++) {
                         matches.push({ row: i, col });
                     }
@@ -482,44 +631,54 @@
                 showScorePopup(matchScore, getCenterOfMatches(matches));
             }
             
-            // Remove matched candies
-            for (const { row, col } of matches) {
-                board[row][col] = null;
-            }
-            
-            // Drop candies down
-            for (let col = 0; col < BOARD_SIZE; col++) {
-                let writeIndex = BOARD_SIZE - 1;
-                for (let row = BOARD_SIZE - 1; row >= 0; row--) {
-                    if (board[row][col] !== null) {
-                        board[writeIndex][col] = board[row][col];
-                        if (writeIndex !== row) {
-                            board[row][col] = null;
-                        }
-                        writeIndex--;
-                    }
+            // Animate removal
+            matches.forEach(({row, col}) => {
+                const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+                if (cell && cell.firstChild) {
+                    cell.firstChild.style.transform = 'scale(0)';
+                    cell.firstChild.style.opacity = '0';
                 }
-                // Fill top with new candies
-                for (let row = writeIndex; row >= 0; row--) {
-                    board[row][col] = COLORS[Math.floor(Math.random() * COLORS.length)];
-                }
-            }
-            
-            // Re-render board
-            renderBoard();
-            
-            // Check for new matches after dropping
+            });
+
             setTimeout(() => {
-                const newMatches = findMatches();
-                if (newMatches.length > 0) {
-                    setTimeout(() => removeMatches(newMatches), 300);
-                } else {
-                    isAnimating = false;
-                    // Check if game should end
-                    if (moves <= 0) {
-                        endGame();
+                // Remove matched candies from logic
+                for (const { row, col } of matches) {
+                    board[row][col] = null;
+                }
+
+                // Drop candies down
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    let writeIndex = BOARD_SIZE - 1;
+                    for (let row = BOARD_SIZE - 1; row >= 0; row--) {
+                        if (board[row][col] !== null) {
+                            board[writeIndex][col] = board[row][col];
+                            if (writeIndex !== row) {
+                                board[row][col] = null;
+                            }
+                            writeIndex--;
+                        }
+                    }
+                    // Fill top with new candies
+                    for (let row = writeIndex; row >= 0; row--) {
+                        board[row][col] = COLORS[Math.floor(Math.random() * COLORS.length)];
                     }
                 }
+
+                // Re-render board
+                renderBoard();
+
+                // Check for new matches after dropping
+                setTimeout(() => {
+                    const newMatches = findMatches();
+                    if (newMatches.length > 0) {
+                        removeMatches(newMatches);
+                    } else {
+                        isAnimating = false;
+                        if (moves <= 0) {
+                            endGame();
+                        }
+                    }
+                }, 300);
             }, 300);
         }
         
@@ -541,8 +700,15 @@
             const popup = document.createElement('div');
             popup.className = 'score-popup';
             popup.textContent = `+${points}`;
-            popup.style.left = `${(center.col + 0.5) * (500 / BOARD_SIZE)}px`;
-            popup.style.top = `${(center.row + 0.5) * (500 / BOARD_SIZE) + 80}px`; // +80 for header offset
+
+            const boardRect = boardElement.getBoundingClientRect();
+            // We need to append to boardElement to position relative to it
+            // Or body, but positioning logic needs to match
+
+            // Simplified positioning since board is relative
+             popup.style.left = `${(center.col + 0.5) * (100 / BOARD_SIZE)}%`;
+             popup.style.top = `${(center.row + 0.5) * (100 / BOARD_SIZE)}%`;
+
             boardElement.appendChild(popup);
             
             // Remove after animation completes
@@ -575,4 +741,3 @@
     </script>
 </body>
 </html>
-

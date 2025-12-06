@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Four</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #e0f7fa; margin: 0; }
+        h1 { margin-bottom: 20px; color: #006064; }
+        .status { margin-bottom: 20px; font-size: 1.5rem; font-weight: bold; color: #00838f; }
+
+        .board {
+            background: #0277bd;
+            padding: 10px;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            width: 95vw;
+            max-width: 500px;
+            aspect-ratio: 7/6;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .column:hover .cell:not(.p1):not(.p2) {
+            background: #4fc3f7; /* Hover effect */
+        }
+
+        .cell {
+            flex: 1;
+            background: #e1f5fe;
+            border-radius: 50%;
+            aspect-ratio: 1;
+            position: relative;
+        }
+
+        .cell.p1 { background: #f44336; } /* Red */
+        .cell.p2 { background: #ffeb3b; } /* Yellow */
+
+        /* Animation */
+        @keyframes drop {
+            from { transform: translateY(-500%); }
+            to { transform: translateY(0); }
+        }
+        .cell.p1, .cell.p2 { animation: drop 0.5s ease-out; }
+
+        button { margin-top: 20px; padding: 10px 25px; font-size: 1.2rem; background: #00838f; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #006064; }
+    </style>
+</head>
+<body>
+    <h1>Connect Four</h1>
+    <div class="status" id="status">Player 1's Turn (Red)</div>
+    <div class="board" id="board"></div>
+    <button onclick="initGame()">Restart Game</button>
+
+    <script>
+        const ROWS = 6;
+        const COLS = 7;
+        let board = [];
+        let currentPlayer = 1; // 1 = Red, 2 = Yellow
+        let gameActive = true;
+
+        const boardEl = document.getElementById('board');
+        const statusEl = document.getElementById('status');
+
+        function initGame() {
+            board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+            currentPlayer = 1;
+            gameActive = true;
+            statusEl.innerText = "Player 1's Turn (Red)";
+            statusEl.style.color = "#d32f2f";
+            renderBoard();
+        }
+
+        function renderBoard() {
+            boardEl.innerHTML = '';
+
+            // Render by columns for click handling
+            for (let c = 0; c < COLS; c++) {
+                const colEl = document.createElement('div');
+                colEl.className = 'column';
+                colEl.addEventListener('click', () => handleColumnClick(c));
+
+                for (let r = 0; r < ROWS; r++) {
+                    const cellEl = document.createElement('div');
+                    cellEl.className = 'cell';
+                    // The visual board is top-down (0 to 5)
+                    // The logic board: board[r][c]
+                    // r=0 is top
+
+                    if (board[r][c] === 1) cellEl.classList.add('p1');
+                    else if (board[r][c] === 2) cellEl.classList.add('p2');
+
+                    colEl.appendChild(cellEl);
+                }
+                boardEl.appendChild(colEl);
+            }
+        }
+
+        function handleColumnClick(col) {
+            if (!gameActive) return;
+
+            // Find first empty row from bottom
+            let rowToPlace = -1;
+            for (let r = ROWS - 1; r >= 0; r--) {
+                if (board[r][col] === 0) {
+                    rowToPlace = r;
+                    break;
+                }
+            }
+
+            if (rowToPlace === -1) return; // Column full
+
+            // Place piece
+            board[rowToPlace][col] = currentPlayer;
+            renderBoard(); // Re-render to show animation
+
+            if (checkWin(rowToPlace, col)) {
+                statusEl.innerText = `Player ${currentPlayer} Wins!`;
+                gameActive = false;
+            } else if (board.every(row => row.every(cell => cell !== 0))) {
+                statusEl.innerText = "Draw!";
+                gameActive = false;
+            } else {
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+                statusEl.innerText = `Player ${currentPlayer}'s Turn (${currentPlayer === 1 ? 'Red' : 'Yellow'})`;
+                statusEl.style.color = currentPlayer === 1 ? "#d32f2f" : "#fbc02d";
+            }
+        }
+
+        function checkWin(r, c) {
+            const player = board[r][c];
+
+            // Directions: Horizontal, Vertical, Diagonal /, Diagonal \
+            return checkDirection(r, c, 0, 1) || // Horizontal
+                   checkDirection(r, c, 1, 0) || // Vertical
+                   checkDirection(r, c, 1, 1) || // Diag \
+                   checkDirection(r, c, 1, -1);  // Diag /
+        }
+
+        function checkDirection(r, c, dr, dc) {
+            let count = 1;
+            const player = board[r][c];
+
+            // Check forward
+            let i = 1;
+            while (true) {
+                const nr = r + dr * i;
+                const nc = c + dc * i;
+                if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr][nc] === player) {
+                    count++;
+                    i++;
+                } else break;
+            }
+
+            // Check backward
+            i = 1;
+            while (true) {
+                const nr = r - dr * i;
+                const nc = c - dc * i;
+                if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr][nc] === player) {
+                    count++;
+                    i++;
+                } else break;
+            }
+
+            return count >= 4;
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
