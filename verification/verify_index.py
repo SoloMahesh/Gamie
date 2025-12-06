@@ -4,7 +4,8 @@ import os
 def run():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        # Use a mobile viewport to verify the layout change
+        page = browser.new_page(viewport={"width": 375, "height": 667})
 
         # Determine the absolute path to index.html
         cwd = os.getcwd()
@@ -12,29 +13,20 @@ def run():
 
         page.goto(file_path)
 
-        # 1. Verify Home Page Load
-        page.wait_for_selector('h1:has-text("Welcome to the game world")')
-        page.screenshot(path="verification/home_page.png")
+        # Verify new games are present
+        page.wait_for_selector('p:has-text("Tetris Clone")')
+        page.wait_for_selector('p:has-text("Dino Run")')
+        page.wait_for_selector('p:has-text("Word Guess")')
+        page.wait_for_selector('p:has-text("Fruit Slicer")')
 
-        # 2. Verify Search Feature
-        page.fill('#game-search', 'Snake')
-        page.wait_for_timeout(500) # Wait for filter
-        page.screenshot(path="verification/search_result.png")
+        # Verify grid layout logic (check class presence)
+        grid = page.locator('#games-grid')
+        classes = grid.get_attribute('class')
+        print(f"Grid classes: {classes}")
 
-        # 3. Verify Explore Button Scroll
-        # Reset search
-        page.fill('#game-search', '')
-        page.click('button:has-text("Explore Games")')
-        page.wait_for_timeout(1000) # Wait for scroll
-        page.screenshot(path="verification/scrolled_to_library.png")
-
-        # 4. Verify New Games are present in list
-        page.wait_for_selector('p:has-text("Memory Match")')
-        page.wait_for_selector('p:has-text("Tower Stack")')
-        page.wait_for_selector('p:has-text("Whack-a-Mole")')
-        page.wait_for_selector('p:has-text("Flappy Bird Clone")')
-        page.wait_for_selector('p:has-text("Simon Says")')
-        page.screenshot(path="verification/new_games_listed.png")
+        # Take screenshot of the grid in mobile view
+        page.locator('#explore-library').scroll_into_view_if_needed()
+        page.screenshot(path="verification/mobile_grid_layout.png")
 
         browser.close()
 

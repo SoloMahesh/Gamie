@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze Escape</title>
+    <style>
+        body { margin: 0; background: #222; overflow: hidden; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; touch-action: none; color: white; }
+        canvas { background: #333; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 2px solid #555; }
+        h1 { margin-bottom: 10px; }
+        #message { position: absolute; top: 50%; width: 100%; text-align: center; font-size: 2rem; background: rgba(0,0,0,0.8); padding: 20px; display: none; }
+        button { padding: 10px 20px; font-size: 1.2rem; margin-top: 10px; background: #4caf50; border: none; color: white; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Maze Escape</h1>
+    <canvas id="canvas"></canvas>
+    <div id="message">
+        <div id="msgText">Level Complete!</div>
+        <button onclick="nextLevel()">Next Level</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Maze Config
+        const cols = 21; // Must be odd for recursive backtracker
+        const rows = 21;
+        let cellSize = 20;
+        let maze = [];
+        let stack = [];
+        let player = { x: 1, y: 1 };
+        let goal = { x: cols - 2, y: rows - 2 };
+        let level = 1;
+
+        function resize() {
+            // Fit screen
+            const maxSize = Math.min(window.innerWidth, window.innerHeight - 100);
+            cellSize = Math.floor(maxSize / cols);
+            canvas.width = cellSize * cols;
+            canvas.height = cellSize * rows;
+            draw();
+        }
+        window.addEventListener('resize', resize);
+
+        class Cell {
+            constructor(c, r) {
+                this.c = c;
+                this.r = r;
+                this.walls = [true, true, true, true]; // Top, Right, Bottom, Left
+                this.visited = false;
+            }
+
+            draw() {
+                const x = this.c * cellSize;
+                const y = this.r * cellSize;
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 2;
+
+                if (this.walls[0]) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + cellSize, y); ctx.stroke(); }
+                if (this.walls[1]) { ctx.beginPath(); ctx.moveTo(x + cellSize, y); ctx.lineTo(x + cellSize, y + cellSize); ctx.stroke(); }
+                if (this.walls[2]) { ctx.beginPath(); ctx.moveTo(x + cellSize, y + cellSize); ctx.lineTo(x, y + cellSize); ctx.stroke(); }
+                if (this.walls[3]) { ctx.beginPath(); ctx.moveTo(x, y + cellSize); ctx.lineTo(x, y); ctx.stroke(); }
+
+                if (this.visited) {
+                    ctx.fillStyle = "#222";
+                    ctx.fillRect(x, y, cellSize, cellSize);
+                }
+            }
+
+            checkNeighbors() {
+                let neighbors = [];
+
+                let top = grid(this.c, this.r - 1);
+                let right = grid(this.c + 1, this.r);
+                let bottom = grid(this.c, this.r + 1);
+                let left = grid(this.c - 1, this.r);
+
+                if (top && !top.visited) neighbors.push(top);
+                if (right && !right.visited) neighbors.push(right);
+                if (bottom && !bottom.visited) neighbors.push(bottom);
+                if (left && !left.visited) neighbors.push(left);
+
+                if (neighbors.length > 0) {
+                    let r = Math.floor(Math.random() * neighbors.length);
+                    return neighbors[r];
+                } else {
+                    return undefined;
+                }
+            }
+        }
+
+        function grid(c, r) {
+            if (c < 0 || r < 0 || c > cols - 1 || r > rows - 1) return undefined;
+            return maze[c + r * cols];
+        }
+
+        function initMaze() {
+            maze = [];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    maze.push(new Cell(c, r));
+                }
+            }
+
+            let current = maze[0];
+            current.visited = true;
+
+            // Generate Maze
+            // Recursive Backtracker
+            // Actually, maze generation usually requires a stack
+            // Let's use a simpler DFS approach
+
+            let stack = [];
+            stack.push(current);
+
+            while(stack.length > 0) {
+                let next = current.checkNeighbors();
+                if (next) {
+                    next.visited = true;
+                    stack.push(current);
+                    removeWalls(current, next);
+                    current = next;
+                } else {
+                    current = stack.pop();
+                }
+            }
+
+            // Reset player
+            player = { x: 0, y: 0 };
+            goal = { x: cols - 1, y: rows - 1 };
+
+            draw();
+        }
+
+        function removeWalls(a, b) {
+            let x = a.c - b.c;
+            if (x === 1) { a.walls[3] = false; b.walls[1] = false; }
+            if (x === -1) { a.walls[1] = false; b.walls[3] = false; }
+
+            let y = a.r - b.r;
+            if (y === 1) { a.walls[0] = false; b.walls[2] = false; }
+            if (y === -1) { a.walls[2] = false; b.walls[0] = false; }
+        }
+
+        function draw() {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < maze.length; i++) {
+                maze[i].draw();
+            }
+
+            // Draw Player
+            ctx.fillStyle = "#00ff00";
+            ctx.fillRect(player.x * cellSize + 4, player.y * cellSize + 4, cellSize - 8, cellSize - 8);
+
+            // Draw Goal
+            ctx.fillStyle = "red";
+            ctx.fillRect(goal.x * cellSize + 4, goal.y * cellSize + 4, cellSize - 8, cellSize - 8);
+        }
+
+        function move(dx, dy) {
+            let currentCell = grid(player.x, player.y);
+            let nextX = player.x + dx;
+            let nextY = player.y + dy;
+
+            // Check walls
+            if (dx === 1 && currentCell.walls[1]) return;
+            if (dx === -1 && currentCell.walls[3]) return;
+            if (dy === 1 && currentCell.walls[2]) return;
+            if (dy === -1 && currentCell.walls[0]) return;
+
+            if (nextX >= 0 && nextX < cols && nextY >= 0 && nextY < rows) {
+                player.x = nextX;
+                player.y = nextY;
+                draw();
+                checkWin();
+            }
+        }
+
+        function checkWin() {
+            if (player.x === goal.x && player.y === goal.y) {
+                document.getElementById('message').style.display = 'block';
+            }
+        }
+
+        function nextLevel() {
+            level++;
+            document.getElementById('message').style.display = 'none';
+            initMaze();
+        }
+
+        // Input
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') move(0, -1);
+            if (e.key === 'ArrowDown') move(0, 1);
+            if (e.key === 'ArrowLeft') move(-1, 0);
+            if (e.key === 'ArrowRight') move(1, 0);
+        });
+
+        // Swipe Support
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, {passive: false});
+
+        document.addEventListener('touchend', (e) => {
+            let touchEndX = e.changedTouches[0].screenX;
+            let touchEndY = e.changedTouches[0].screenY;
+
+            let diffX = touchEndX - touchStartX;
+            let diffY = touchEndY - touchStartY;
+
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (Math.abs(diffX) > 30) {
+                    if (diffX > 0) move(1, 0);
+                    else move(-1, 0);
+                }
+            } else {
+                if (Math.abs(diffY) > 30) {
+                    if (diffY > 0) move(0, 1);
+                    else move(0, -1);
+                }
+            }
+        }, {passive: false});
+
+        resize();
+        initMaze();
+    </script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross Road</title>
+    <style>
+        body { margin: 0; background: #87CEEB; overflow: hidden; font-family: 'Segoe UI', sans-serif; touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        canvas { display: block; box-shadow: 0 10px 20px rgba(0,0,0,0.2); background: #90ee90; }
+        #score { position: absolute; top: 20px; left: 20px; font-size: 30px; color: white; font-weight: bold; pointer-events: none; text-shadow: 1px 1px black; }
+        #gameOver { position: absolute; background: rgba(0,0,0,0.8); color: white; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        button { padding: 15px 30px; font-size: 1.5rem; background: #FF9800; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; pointer-events: auto; }
+    </style>
+</head>
+<body>
+    <div id="score">0</div>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="gameOver">
+        <h1>SPLAT!</h1>
+        <p>Score: <span id="finalScore">0</span></p>
+        <button onclick="initGame()">Try Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        const GRID_SIZE = 40;
+
+        // Game State
+        let player = { x: 5, y: 0 }; // Grid coords
+        let score = 0;
+        let maxScore = 0;
+        let lanes = []; // Array of lane objects
+        let gameActive = true;
+        let cameraY = 0;
+
+        function resize() {
+            width = Math.min(window.innerWidth, 600);
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+
+        class Lane {
+            constructor(y) {
+                this.y = y; // Grid Y
+                this.type = Math.random() > 0.5 ? 'road' : (Math.random() > 0.5 ? 'water' : 'grass');
+                if (y <= 3) this.type = 'grass'; // Start safe
+
+                this.obstacles = [];
+                this.speed = (Math.random() * 2 + 2) * (Math.random() > 0.5 ? 1 : -1);
+
+                // Init obstacles
+                if (this.type === 'road') {
+                    // Cars
+                    let count = Math.floor(Math.random() * 2) + 1;
+                    for(let i=0; i<count; i++) {
+                        this.obstacles.push({
+                            x: Math.random() * width,
+                            w: 60,
+                            h: 30,
+                            color: Math.random() > 0.5 ? '#e74c3c' : '#3498db'
+                        });
+                    }
+                } else if (this.type === 'water') {
+                    // Logs
+                    let count = Math.floor(Math.random() * 3) + 2;
+                    for(let i=0; i<count; i++) {
+                        this.obstacles.push({
+                            x: Math.random() * width,
+                            w: 80,
+                            h: 30,
+                            color: '#795548'
+                        });
+                    }
+                }
+            }
+
+            update() {
+                if (this.type === 'grass') return;
+
+                for(let o of this.obstacles) {
+                    o.x += this.speed;
+                    // Wrap
+                    if (this.speed > 0 && o.x > width) o.x = -o.w;
+                    if (this.speed < 0 && o.x + o.w < 0) o.x = width;
+                }
+            }
+
+            draw(offsetY) {
+                let drawY = (player.y - this.y + 5) * GRID_SIZE + offsetY;
+                // Since y increases as we go "forward" in data (score), visually it should go UP?
+                // Standard Crossy Road: forward is UP the screen.
+                // Screen Y = height - (worldY - cameraY) * grid
+
+                let screenY = height - 100 - (this.y * GRID_SIZE) + cameraY;
+
+                // Background
+                if (this.type === 'grass') ctx.fillStyle = "#81c784";
+                else if (this.type === 'road') ctx.fillStyle = "#555";
+                else if (this.type === 'water') ctx.fillStyle = "#4fc3f7";
+
+                ctx.fillRect(0, screenY, width, GRID_SIZE);
+
+                // Obstacles
+                for(let o of this.obstacles) {
+                    ctx.fillStyle = o.color;
+                    ctx.fillRect(o.x, screenY + 5, o.w, GRID_SIZE - 10);
+                }
+            }
+        }
+
+        function initGame() {
+            resize();
+            player = { x: Math.floor(width / GRID_SIZE / 2), y: 0 };
+            score = 0;
+            maxScore = 0;
+            lanes = [];
+            gameActive = true;
+            cameraY = 0;
+            document.getElementById('score').innerText = 0;
+            document.getElementById('gameOver').style.display = 'none';
+
+            // Create initial lanes
+            for(let i=0; i<20; i++) {
+                lanes.push(new Lane(i));
+            }
+
+            loop();
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            // Update Lanes
+            lanes.forEach(l => l.update());
+
+            // Camera follow
+            let targetY = player.y * GRID_SIZE;
+            cameraY += (targetY - cameraY) * 0.1;
+
+            // Infinite generation
+            if (lanes.length < player.y + 20) {
+                lanes.push(new Lane(lanes.length));
+            }
+
+            // Cleanup behind
+            // Not strictly necessary for JS performance on small scale, but good practice
+
+            checkCollisions();
+        }
+
+        function checkCollisions() {
+            let currentLane = lanes[player.y];
+            if (!currentLane) return;
+
+            // Player Screen Pos
+            let px = player.x * GRID_SIZE;
+            // let py = height - 100 - (player.y * GRID_SIZE) + cameraY; // Only for draw logic
+
+            // Relative player rect: x: px, w: 30
+            let pRect = { l: px + 5, r: px + GRID_SIZE - 5 };
+
+            if (currentLane.type === 'road') {
+                for (let o of currentLane.obstacles) {
+                    // Check intersection
+                    if (pRect.r > o.x && pRect.l < o.x + o.w) {
+                        gameOver();
+                    }
+                }
+            } else if (currentLane.type === 'water') {
+                let onLog = false;
+                for (let o of currentLane.obstacles) {
+                    if (pRect.r > o.x && pRect.l < o.x + o.w) {
+                        onLog = true;
+                        // Move player with log
+                        // Need exact float position for player to be smooth?
+                        // For grid based, maybe just die if not on log?
+                        // Usually player moves with log.
+                        // Simplified: player dies if water and NOT on log.
+                    }
+                }
+                if (!onLog) {
+                    gameOver();
+                }
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = "#87CEEB";
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw Lanes
+            // Optimization: only draw visible
+            // Current visible world Y range:
+            // bottom: cameraY / grid - ...
+
+            lanes.forEach(l => l.draw(0));
+
+            // Draw Player
+            // x is grid, y is handled by camera offset logic in lane draw
+            let screenY = height - 100 - (player.y * GRID_SIZE) + cameraY;
+            ctx.fillStyle = "#fff"; // Chicken
+            ctx.fillRect(player.x * GRID_SIZE + 5, screenY + 5, GRID_SIZE - 10, GRID_SIZE - 10);
+            // Beak
+            ctx.fillStyle = "orange";
+            ctx.fillRect(player.x * GRID_SIZE + 15, screenY, 10, 5);
+        }
+
+        function loop() {
+            if (!gameActive) return;
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        function move(dx, dy) {
+            if (!gameActive) return;
+
+            let nx = player.x + dx;
+            let ny = player.y + dy;
+
+            // Grid bounds
+            if (nx < 0 || nx * GRID_SIZE >= width) return;
+            if (ny < 0) return; // Can't go back behind start
+
+            player.x = nx;
+            player.y = ny;
+
+            if (player.y > maxScore) {
+                maxScore = player.y;
+                score = maxScore;
+                document.getElementById('score').innerText = score;
+            }
+        }
+
+        function gameOver() {
+            gameActive = false;
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('gameOver').style.display = 'flex';
+        }
+
+        // Input
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') move(0, 1);
+            else if (e.key === 'ArrowDown') move(0, -1);
+            else if (e.key === 'ArrowLeft') move(-1, 0);
+            else if (e.key === 'ArrowRight') move(1, 0);
+        });
+
+        // Tap = Forward, Swipe = Side/Back?
+        // Simple Touch: Tap top half = up, bottom = down, left/right
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            let tx = e.touches[0].clientX;
+            let ty = e.touches[0].clientY;
+            let cx = window.innerWidth / 2;
+            let cy = window.innerHeight / 2;
+
+            // Simple quadrant
+            if (Math.abs(tx - cx) > Math.abs(ty - cy)) {
+                if (tx < cx) move(-1, 0);
+                else move(1, 0);
+            } else {
+                if (ty < cy) move(0, 1);
+                else move(0, -1);
+            }
+        }, {passive: false});
+
+        initGame();
+    </script>
+</body>
+</html>

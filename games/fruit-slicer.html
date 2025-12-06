@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fruit Slicer</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #333; touch-action: none; font-family: 'Segoe UI', sans-serif; }
+        canvas { display: block; width: 100%; height: 100%; }
+        #score { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 30px; font-weight: bold; pointer-events: none; }
+        #gameOver { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        button { padding: 15px 30px; font-size: 20px; background: #ff9800; border: none; color: white; border-radius: 5px; cursor: pointer; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div id="score">0</div>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="gameOver">
+        <h1>GAME OVER</h1>
+        <p>Score: <span id="finalScore">0</span></p>
+        <button onclick="resetGame()">Play Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let fruits = [];
+        let particles = [];
+        let score = 0;
+        let gameRunning = false;
+        let lives = 3;
+
+        let mouseX = 0, mouseY = 0;
+        let isDown = false;
+        let trail = [];
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Fruit {
+            constructor() {
+                this.x = Math.random() * (width - 100) + 50;
+                this.y = height + 50;
+                this.radius = 30;
+                this.color = `hsl(${Math.random() * 360}, 70%, 50%)`;
+
+                // Physics
+                this.vx = (Math.random() - 0.5) * 4; // Horizontal drift
+                this.vy = -(Math.random() * 5 + 10); // Upward force
+                this.gravity = 0.15;
+
+                this.sliced = false;
+                this.isBomb = Math.random() > 0.9;
+                if (this.isBomb) {
+                    this.color = '#000';
+                }
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += this.gravity;
+
+                // Rotation (visual only) can be added
+            }
+
+            draw() {
+                if (this.sliced) return;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+
+                if (this.isBomb) {
+                    // Draw fuse
+                    ctx.fillStyle = "red";
+                    ctx.fillRect(this.x - 5, this.y - 40, 10, 15);
+                }
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 10;
+                this.vy = (Math.random() - 0.5) * 10;
+                this.life = 1.0;
+                this.color = color;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 0.02;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        function spawnFruit() {
+            if (Math.random() < 0.03) { // Spawn rate
+                fruits.push(new Fruit());
+            }
+        }
+
+        function checkCollisions() {
+            if (trail.length < 2) return;
+
+            // Current mouse pos
+            const p2 = {x: mouseX, y: mouseY};
+            // Previous mouse pos (slightly back in trail)
+            const p1 = trail[trail.length - 2];
+
+            if (!p1) return;
+
+            for (let i = 0; i < fruits.length; i++) {
+                let f = fruits[i];
+                if (f.sliced) continue;
+
+                // Line segment circle intersection approximation
+                // Just check distance to current point for simplicity + speed threshold
+
+                let dist = Math.hypot(f.x - mouseX, f.y - mouseY);
+                if (dist < f.radius) {
+                    slice(f);
+                }
+            }
+        }
+
+        function slice(f) {
+            f.sliced = true;
+            if (f.isBomb) {
+                gameOver();
+            } else {
+                score++;
+                document.getElementById('score').innerText = score;
+                // Create particles
+                for (let i = 0; i < 10; i++) {
+                    particles.push(new Particle(f.x, f.y, f.color));
+                }
+            }
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('gameOver').style.display = 'flex';
+        }
+
+        function resetGame() {
+            fruits = [];
+            particles = [];
+            trail = [];
+            score = 0;
+            gameRunning = true;
+            document.getElementById('score').innerText = 0;
+            document.getElementById('gameOver').style.display = 'none';
+            loop();
+        }
+
+        function loop() {
+            if (!gameRunning) return;
+
+            ctx.fillStyle = 'rgba(51, 51, 51, 0.4)'; // Trails for background clearing
+            ctx.fillRect(0, 0, width, height);
+
+            spawnFruit();
+
+            // Update Fruits
+            for (let i = fruits.length - 1; i >= 0; i--) {
+                let f = fruits[i];
+                f.update();
+                f.draw();
+
+                if (f.y > height + 60 && f.vy > 0) {
+                    if (!f.sliced && !f.isBomb) {
+                        // Missed fruit
+                        // lives--; // Optional logic
+                    }
+                    fruits.splice(i, 1);
+                }
+            }
+
+            // Update Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.update();
+                p.draw();
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            // Draw Blade Trail
+            ctx.beginPath();
+            if (trail.length > 0) {
+                ctx.moveTo(trail[0].x, trail[0].y);
+                for (let i = 1; i < trail.length; i++) {
+                    ctx.lineTo(trail[i].x, trail[i].y);
+                }
+            }
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 5;
+            ctx.lineCap = "round";
+            ctx.stroke();
+
+            // Fade trail
+            if (trail.length > 10) trail.shift();
+            // Also decay trail if not moving? handled by shifting
+
+            checkCollisions();
+
+            requestAnimationFrame(loop);
+        }
+
+        // Input
+        function handleMove(x, y) {
+            mouseX = x;
+            mouseY = y;
+            if (isDown) {
+                trail.push({x, y});
+            }
+        }
+
+        canvas.addEventListener('mousedown', e => { isDown = true; trail = []; });
+        canvas.addEventListener('mouseup', e => { isDown = false; trail = []; });
+        canvas.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
+
+        canvas.addEventListener('touchstart', e => {
+            isDown = true;
+            trail = [];
+            handleMove(e.touches[0].clientX, e.touches[0].clientY);
+        }, {passive: false});
+
+        canvas.addEventListener('touchend', e => { isDown = false; trail = []; });
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            handleMove(e.touches[0].clientX, e.touches[0].clientY);
+        }, {passive: false});
+
+        resetGame();
+    </script>
+</body>
+</html>
