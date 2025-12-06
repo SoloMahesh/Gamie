@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finger Battle</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #222; font-family: 'Segoe UI', sans-serif; touch-action: none; display: flex; flex-direction: column; height: 100vh; }
+
+        .player-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: height 0.1s;
+        }
+
+        #top {
+            background-color: #3498db;
+            transform: rotate(180deg); /* Face opponent */
+        }
+
+        #bottom {
+            background-color: #e74c3c;
+        }
+
+        .btn {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            border: 5px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            user-select: none;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            background: rgba(255,255,255,0.6);
+            transform: scale(0.95);
+        }
+
+        .character {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 10px;
+            position: absolute;
+            transition: bottom 0.1s;
+        }
+
+        /* Simple visualization of tug-of-war bar */
+        #bar-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(90deg);
+            width: 80vh;
+            height: 40px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 20px;
+            border: 2px solid white;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        #bar-fill {
+            height: 100%;
+            width: 50%;
+            background: linear-gradient(to right, #3498db, #e74c3c);
+            transition: width 0.1s;
+        }
+
+        #winner-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: white;
+            z-index: 10;
+        }
+
+        button { padding: 15px 30px; font-size: 1.5rem; border: none; border-radius: 10px; cursor: pointer; margin-top: 20px; }
+
+    </style>
+</head>
+<body>
+    <div class="player-area" id="top">
+        <div class="btn" id="btn-top" onmousedown="tap(1)" ontouchstart="tap(1)">TAP!</div>
+    </div>
+
+    <div id="bar-container">
+        <div id="bar-fill" style="width: 50%"></div>
+    </div>
+
+    <div class="player-area" id="bottom">
+        <div class="btn" id="btn-bottom" onmousedown="tap(2)" ontouchstart="tap(2)">TAP!</div>
+    </div>
+
+    <div id="winner-screen">
+        <h1 id="winnerText">WINNER!</h1>
+        <button onclick="resetGame()">Play Again</button>
+    </div>
+
+    <script>
+        let score = 50; // 0 = Top wins, 100 = Bottom wins
+        let gameActive = true;
+        const barFill = document.getElementById('bar-fill');
+        const winnerScreen = document.getElementById('winner-screen');
+        const winnerText = document.getElementById('winnerText');
+
+        function tap(player) {
+            if (!gameActive) return;
+            // Prevent default touch behavior
+            if (event.cancelable) event.preventDefault();
+
+            const power = 3; // Amount bar moves per tap
+
+            if (player === 1) { // Top (Blue) pushes towards 0
+                score -= power;
+            } else { // Bottom (Red) pushes towards 100
+                score += power;
+            }
+
+            updateBar();
+            checkWin();
+        }
+
+        function updateBar() {
+            // Visualize: 50 is center.
+            // If top pushes (score decreases), blue bar (left side of gradient) should grow?
+            // Actually simpler: Bar fill width represents current position divider.
+            // Let's say bar is filled from top (left in rotated view).
+            // 0 = Top Full Win. 100 = Bottom Full Win.
+            // So if score is 50, bar is 50%.
+
+            // Wait, gradient is left to right (blue to red).
+            // Left (0) is Blue side. Right (100) is Red side.
+            // If Blue taps, they want to push the bar to the RIGHT (towards Red's base)?
+            // Or usually tug of war: pull towards yourself.
+            // Let's say Blue is Top. Pulling means bar moves UP (towards 0).
+            // So width reduces.
+
+            barFill.style.width = score + "%";
+        }
+
+        function checkWin() {
+            if (score <= 0) {
+                endGame("BLUE WINS!");
+                winnerScreen.style.background = "rgba(52, 152, 219, 0.9)";
+            } else if (score >= 100) {
+                endGame("RED WINS!");
+                winnerScreen.style.background = "rgba(231, 76, 60, 0.9)";
+            }
+        }
+
+        function endGame(msg) {
+            gameActive = false;
+            winnerText.innerText = msg;
+            winnerScreen.style.display = "flex";
+        }
+
+        function resetGame() {
+            score = 50;
+            gameActive = true;
+            updateBar();
+            winnerScreen.style.display = "none";
+        }
+
+        // Prevent zoom
+        document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+    </script>
+</body>
+</html>
