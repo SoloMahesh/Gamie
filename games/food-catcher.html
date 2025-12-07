@@ -287,6 +287,63 @@
             font-size: 0.9rem;
         }
 
+        #start-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #start-modal h1 {
+            font-size: 3rem;
+            color: var(--primary-orange);
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+        }
+
+        #start-modal p {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+
+        .key-instruction {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 0 5px;
+        }
+
+        .food-legend {
+            display: flex;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 10px;
+        }
+
         @media (max-width: 600px) {
             .game-header {
                 padding: 10px 15px;
@@ -373,13 +430,27 @@
             <div class="final-score">Final Score: <span id="final-score">0</span></div>
             <button class="btn" id="restart-btn">Play Again</button>
         </div>
+
+        <div id="start-modal">
+            <h1>Food Catcher</h1>
+            <p>Catch healthy foods to score points!</p>
+            <p>Avoid <span style="color: #ff6b6b;">Junk Food</span> as it hurts your health.</p>
+            <div class="food-legend">
+                <div class="legend-item"><span style="font-size: 1.5rem">🍎</span> +10 Pts</div>
+                <div class="legend-item"><span style="font-size: 1.5rem">🥦</span> +15 Pts</div>
+                <div class="legend-item"><span style="font-size: 1.5rem">🍦</span> +20 Pts</div>
+                <div class="legend-item"><span style="font-size: 1.5rem">🍔</span> -20 Pts / -15 HP</div>
+            </div>
+            <p>Use <span class="key-instruction">←</span> <span class="key-instruction">→</span> Arrow keys or <span class="key-instruction">Swipe</span> to move.</p>
+            <button class="btn" onclick="startGame()">Start Game</button>
+        </div>
     </div>
 
     <script>
         // Game variables
         let score = 0;
         let health = 100;
-        let gameRunning = true;
+        let gameRunning = false;
         let gameTime = 60;
         let foodSpeed = 3;
         let basketPosition = 50;
@@ -387,6 +458,7 @@
         let foodCounts = { fruit: 0, vegetable: 0, dessert: 0 };
         let gameInterval;
         let spawnInterval;
+        let timerInterval;
         let keysPressed = {};
         
         // Food types configuration
@@ -414,6 +486,11 @@
         const vegCountElement = document.getElementById('veg-count');
         const dessertCountElement = document.getElementById('dessert-count');
         
+        function startGame() {
+            document.getElementById('start-modal').style.display = 'none';
+            initGame();
+        }
+
         // Initialize game
         function initGame() {
             score = 0;
@@ -438,19 +515,23 @@
             dessertCountElement.textContent = foodCounts.dessert;
             gameOverScreen.classList.remove('show');
             
+            // Clear previous intervals if any
+            if(gameInterval) clearInterval(gameInterval);
+            if(spawnInterval) clearInterval(spawnInterval);
+            if(timerInterval) clearInterval(timerInterval);
+
             // Start game loops
             gameInterval = setInterval(gameLoop, 1000/60);
             spawnInterval = setInterval(spawnFood, 1200);
             
             // Start timer
-            const timer = setInterval(() => {
+            timerInterval = setInterval(() => {
                 if (gameRunning) {
                     gameTime--;
                     timeElement.textContent = gameTime + 's';
                     
                     if (gameTime <= 0) {
                         endGame();
-                        clearInterval(timer);
                     }
                 }
             }, 1000);
@@ -470,8 +551,9 @@
                 basket.style.left = basketPosition + '%';
             }
             
-            // Move foods
-            foods.forEach((food, index) => {
+            // Move foods - Iterate backwards to safely remove elements
+            for (let i = foods.length - 1; i >= 0; i--) {
+                const food = foods[i];
                 const currentTop = parseInt(food.style.top) || -50;
                 food.style.top = (currentTop + foodSpeed) + 'px';
                 
@@ -487,10 +569,10 @@
                             endGame();
                         }
                     }
-                    food.remove();
-                    foods.splice(index, 1);
+                    if(food.parentNode) food.remove();
+                    foods.splice(i, 1);
                 }
-            });
+            }
             
             // Check collisions
             checkCollisions();
@@ -520,7 +602,9 @@
         
         // Check collisions between basket and food
         function checkCollisions() {
-            foods.forEach((food, index) => {
+            // Iterate backwards to safely remove elements
+            for (let i = foods.length - 1; i >= 0; i--) {
+                const food = foods[i];
                 const foodRect = food.getBoundingClientRect();
                 const basketRect = basket.getBoundingClientRect();
                 
@@ -559,10 +643,10 @@
                     createExplosion(foodRect.left + foodRect.width/2, foodRect.top + foodRect.height/2);
                     
                     // Remove food
-                    food.remove();
-                    foods.splice(index, 1);
+                    if(food.parentNode) food.remove();
+                    foods.splice(i, 1);
                 }
-            });
+            }
         }
         
         // Create explosion effect
@@ -590,6 +674,7 @@
             gameRunning = false;
             clearInterval(gameInterval);
             clearInterval(spawnInterval);
+            clearInterval(timerInterval);
             finalScoreElement.textContent = score;
             gameOverScreen.classList.add('show');
         }
@@ -606,51 +691,7 @@
         
         restartBtn.addEventListener('click', initGame);
         
-        // Touch controls for mobile - Improved Sensitivity
-        let touchStartX = 0;
-        let lastBasketPosition = 50;
-
-        gameBoard.addEventListener('touchstart', (e) => {
-            if (!gameRunning) return;
-            touchStartX = e.touches[0].clientX;
-            lastBasketPosition = basketPosition;
-        });
-        
-        gameBoard.addEventListener('touchmove', (e) => {
-            if (!gameRunning) return;
-            e.preventDefault();
-            const touchX = e.touches[0].clientX;
-            const diffX = touchX - touchStartX;
-
-            // Map screen width to basket percentage (0-100)
-            // Multiplier 1.2 to make it slightly more sensitive than 1:1 mapping
-            const sensitivity = 0.15;
-
-            // Calculate new position based on delta
-            // Using a simpler approach: relative movement directly mapped
-            // We want 1px of touch move to move basket by some amount
-            // Board width is variable, so we use percentages.
-
-            const containerWidth = gameBoard.clientWidth;
-            const percentChange = (diffX / containerWidth) * 100 * 1.5; // 1.5x multiplier for sensitivity
-
-            let newPos = lastBasketPosition + percentChange;
-            basketPosition = Math.max(5, Math.min(95, newPos));
-
-            basket.style.left = basketPosition + '%';
-
-            // We don't update touchStartX here for "relative from start" drag style
-            // If we wanted "incremental" drag, we would update touchStartX and use basketPosition as base
-            // But for smooth slider-like feel, updating lastBasketPosition on start and diffing is good,
-            // provided the user doesn't lift finger.
-            // Actually, "follow finger" is best.
-        });
-
-        // Better "Follow Finger" Logic
-        // We want the basket to move exactly with the finger, but clamped.
-        // Or we want relative motion. Let's try relative motion with reset on touchstart.
-
-        // Let's refine the touchmove handler to be purely delta-based for responsiveness
+        // Touch controls
         let previousTouchX = 0;
 
         gameBoard.addEventListener('touchstart', (e) => {
@@ -664,8 +705,6 @@
              previousTouchX = currentTouchX;
 
              const containerWidth = gameBoard.clientWidth;
-             // Convert delta pixels to percentage
-             // sensitivity factor can be tuned. 1.0 means 1:1 movement.
              const sensitivity = 1.2;
              const deltaPercent = (deltaX / containerWidth) * 100 * sensitivity;
 
@@ -673,8 +712,8 @@
              basket.style.left = basketPosition + '%';
         }, {passive: false});
         
-        // Start the game
-        initGame();
+        // Start the game - Removed automatic initGame()
+        // initGame();
     </script>
 </body>
 </html>

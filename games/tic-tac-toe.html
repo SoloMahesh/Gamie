@@ -12,6 +12,12 @@
         .cell:hover { background: #bdc3c7; }
         .cell.x { color: #e74c3c; }
         .cell.o { color: #3498db; }
+        .cell.win { background: #2ecc71; color: white; animation: pulse 1s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
         .status { margin-top: 20px; font-size: 1.5rem; height: 30px; }
         button { margin-top: 20px; padding: 10px 20px; font-size: 1.2rem; background: #2ecc71; border: none; border-radius: 5px; color: white; cursor: pointer; }
         button:hover { background: #27ae60; }
@@ -79,6 +85,8 @@
 
         function handleResultValidation() {
             let roundWon = false;
+            let winningCombo = [];
+
             for (let i = 0; i <= 7; i++) {
                 const winCondition = winningConditions[i];
                 let a = gameState[winCondition[0]];
@@ -87,6 +95,7 @@
                 if (a === '' || b === '' || c === '') continue;
                 if (a === b && b === c) {
                     roundWon = true;
+                    winningCombo = winCondition;
                     break;
                 }
             }
@@ -94,6 +103,10 @@
             if (roundWon) {
                 statusDisplay.innerHTML = `${currentPlayer} Wins!`;
                 gameActive = false;
+                // Highlight winning cells
+                winningCombo.forEach(index => {
+                    document.querySelector(`.cell[data-index="${index}"]`).classList.add('win');
+                });
                 return;
             }
 
@@ -160,7 +173,7 @@
             statusDisplay.innerHTML = "X's Turn";
             document.querySelectorAll('.cell').forEach(cell => {
                 cell.innerHTML = "";
-                cell.classList.remove('x', 'o');
+                cell.classList.remove('x', 'o', 'win');
             });
         }
 

@@ -87,8 +87,10 @@
             speed = 3 + (score * 0.1);
         }
 
-        function placeBlock() {
+        function placeBlock(e) {
             if(!gameRunning) return;
+            // Prevent multiple triggers from mouse/touch overlap
+            if(e && e.type === 'touchstart') e.preventDefault();
 
             const prevBlock = blocks[blocks.length - 1];
             const dist = currentBlock.x - prevBlock.x;
@@ -212,17 +214,23 @@
         }
 
         function resetGame() {
-            initGame();
+            // Ensure event propagation doesn't trigger placeBlock
+            setTimeout(initGame, 100);
         }
 
         // Inputs
-        document.addEventListener('mousedown', placeBlock);
+        document.addEventListener('mousedown', (e) => {
+             // If clicking button, don't place block
+             if(e.target.tagName === 'BUTTON') return;
+             placeBlock(e);
+        });
         document.addEventListener('keydown', (e) => {
-            if(e.code === 'Space') placeBlock();
+            if(e.code === 'Space') placeBlock(e);
         });
         document.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Prevent zoom
-            placeBlock();
+            // If touching button, don't place block
+             if(e.target.tagName === 'BUTTON') return;
+            placeBlock(e);
         }, {passive: false});
 
         initGame();
