@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fruit Merge</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #ffeaa7; font-family: 'Segoe UI', sans-serif; touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        canvas { border: 2px solid #555; background: #fff; border-bottom: none; }
+        #container { position: relative; width: 100%; max-width: 400px; height: 100%; max-height: 600px; border: 2px solid #555; border-top: none; background: rgba(255,255,255,0.5); }
+        #score { position: absolute; top: 10px; left: 10px; font-size: 1.5rem; color: #333; font-weight: bold; pointer-events: none; }
+        #nextFruit { position: absolute; top: 10px; right: 10px; width: 50px; height: 50px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; background: white; border-radius: 5px; }
+        #gameOver { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        button { padding: 10px 20px; font-size: 1.2rem; margin-top: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <div id="nextFruit"></div>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="gameOver">
+        <h1>Game Over</h1>
+        <button onclick="resetGame()">Try Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        // Matter.js "Light" Physics implementation
+        // Since we can't use external libs, we write a simple verlet physics engine with circle collision.
+
+        const fruitTypes = [
+            { radius: 15, color: '#ff0000', score: 2 },   // Cherry
+            { radius: 25, color: '#ff7f50', score: 4 },   // Strawberry
+            { radius: 35, color: '#a29bfe', score: 8 },   // Grape
+            { radius: 45, color: '#fdcb6e', score: 16 },  // Lemon
+            { radius: 60, color: '#fd79a8', score: 32 },  // Peach
+            { radius: 75, color: '#e17055', score: 64 },  // Apple
+            { radius: 90, color: '#00b894', score: 128 }, // Melon
+            { radius: 110, color: '#0984e3', score: 256 },// Watermelon
+        ];
+
+        let fruits = [];
+        let currentFruitType = 0;
+        let nextFruitType = 0;
+        let score = 0;
+        let gameActive = true;
+        let dropX = 0;
+
+        // Constants
+        const gravity = 0.5;
+        const friction = 0.98;
+        const bounce = 0.3;
+
+        function resize() {
+            width = Math.min(window.innerWidth, 400);
+            height = Math.min(window.innerHeight, 600);
+            canvas.width = width;
+            canvas.height = height;
+            dropX = width / 2;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function resetGame() {
+            fruits = [];
+            score = 0;
+            currentFruitType = Math.floor(Math.random() * 3); // Start small
+            nextFruitType = Math.floor(Math.random() * 3);
+            updateUI();
+            gameActive = true;
+            document.getElementById('gameOver').style.display = 'none';
+        }
+
+        function updateUI() {
+            document.getElementById('score').innerText = 'Score: ' + score;
+            const nextEl = document.getElementById('nextFruit');
+            nextEl.style.backgroundColor = fruitTypes[nextFruitType].color;
+            nextEl.style.borderRadius = '50%';
+            nextEl.style.transform = `scale(${fruitTypes[nextFruitType].radius / 40})`;
+        }
+
+        function spawnFruit(x) {
+            const typeIdx = currentFruitType;
+            const type = fruitTypes[typeIdx];
+
+            fruits.push({
+                x: x,
+                y: 50,
+                vx: 0,
+                vy: 0,
+                radius: type.radius,
+                color: type.color,
+                type: typeIdx,
+                id: Math.random()
+            });
+
+            currentFruitType = nextFruitType;
+            nextFruitType = Math.floor(Math.random() * 4); // Only spawn smaller fruits
+            updateUI();
+        }
+
+        function checkMerge() {
+            for (let i = 0; i < fruits.length; i++) {
+                for (let j = i + 1; j < fruits.length; j++) {
+                    const f1 = fruits[i];
+                    const f2 = fruits[j];
+
+                    if (f1.type === f2.type && !f1.merged && !f2.merged) {
+                        const dx = f2.x - f1.x;
+                        const dy = f2.y - f1.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+
+                        if (dist < f1.radius + f2.radius) {
+                            // Merge!
+                            // New Fruit
+                            const newTypeIdx = f1.type + 1;
+                            if (newTypeIdx < fruitTypes.length) {
+                                const newX = (f1.x + f2.x) / 2;
+                                const newY = (f1.y + f2.y) / 2;
+
+                                fruits.push({
+                                    x: newX,
+                                    y: newY,
+                                    vx: 0,
+                                    vy: 0,
+                                    radius: fruitTypes[newTypeIdx].radius,
+                                    color: fruitTypes[newTypeIdx].color,
+                                    type: newTypeIdx,
+                                    id: Math.random()
+                                });
+                                score += fruitTypes[f1.type].score;
+                            }
+
+                            f1.merged = true;
+                            f2.merged = true;
+                        }
+                    }
+                }
+            }
+            fruits = fruits.filter(f => !f.merged);
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            // Physics Loop
+            // Sub-steps for stability
+            const subSteps = 8;
+            for(let step=0; step<subSteps; step++) {
+                fruits.forEach(f => {
+                    f.vy += gravity / subSteps;
+                    f.x += f.vx / subSteps;
+                    f.y += f.vy / subSteps;
+                    f.vx *= friction;
+                    f.vy *= friction;
+
+                    // Floor
+                    if (f.y + f.radius > height) {
+                        f.y = height - f.radius;
+                        f.vy *= -bounce;
+                    }
+                    // Walls
+                    if (f.x - f.radius < 0) {
+                        f.x = f.radius;
+                        f.vx *= -bounce;
+                    }
+                    if (f.x + f.radius > width) {
+                        f.x = width - f.radius;
+                        f.vx *= -bounce;
+                    }
+                });
+
+                // Collisions
+                for (let i = 0; i < fruits.length; i++) {
+                    for (let j = i + 1; j < fruits.length; j++) {
+                        const f1 = fruits[i];
+                        const f2 = fruits[j];
+
+                        const dx = f2.x - f1.x;
+                        const dy = f2.y - f1.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        const minDist = f1.radius + f2.radius;
+
+                        if (dist < minDist) {
+                            // Resolve overlap
+                            const angle = Math.atan2(dy, dx);
+                            const overlap = minDist - dist;
+
+                            // Separate
+                            const moveX = Math.cos(angle) * overlap * 0.5;
+                            const moveY = Math.sin(angle) * overlap * 0.5;
+
+                            f1.x -= moveX;
+                            f1.y -= moveY;
+                            f2.x += moveX;
+                            f2.y += moveY;
+
+                            // Impulse exchange (simple)
+                            // Ideally mass based, here radius based approx
+                            // Just damping velocity relative to normal
+                            // Very simplified:
+                            const nx = dx / dist;
+                            const ny = dy / dist;
+
+                            // Relative velocity
+                            const rvx = f2.vx - f1.vx;
+                            const rvy = f2.vy - f1.vy;
+
+                            // Vel along normal
+                            const velAlongNormal = rvx * nx + rvy * ny;
+
+                            // Do not resolve if moving away
+                            if(velAlongNormal > 0) continue;
+
+                            const restitution = 0.2;
+                            let jImp = -(1 + restitution) * velAlongNormal;
+                            jImp /= (1/f1.radius + 1/f2.radius); // Inverse mass approx
+
+                            const impulseX = jImp * nx;
+                            const impulseY = jImp * ny;
+
+                            f1.vx -= impulseX * (1/f1.radius);
+                            f1.vy -= impulseY * (1/f1.radius);
+                            f2.vx += impulseX * (1/f2.radius);
+                            f2.vy += impulseY * (1/f2.radius);
+                        }
+                    }
+                }
+            }
+
+            checkMerge();
+
+            // Check Game Over (fruit stays above line)
+            const limitY = 100;
+            // Only if stable?
+            // Simple check: if any fruit center is above limitY for some time
+            fruits.forEach(f => {
+                if (f.y < limitY && f.vy > -0.1 && f.vy < 0.1) {
+                    // Potential game over
+                    // Actually, give it a loose condition
+                }
+            });
+            // Let's enforce top wall as ceiling but if too full -> game over?
+            // "Stack overflow"
+            let overflow = false;
+            fruits.forEach(f => {
+                if(f.y - f.radius < 0) overflow = true;
+            });
+            if (overflow && fruits.length > 2) {
+                // gameOver(); // It's annoying if immediate. Let's skip for now or make a timer.
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw Limit Line
+            ctx.strokeStyle = "#fab1a0";
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, 100);
+            ctx.lineTo(width, 100);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw Fruits
+            fruits.forEach(f => {
+                ctx.fillStyle = f.color;
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Shine
+                ctx.fillStyle = "rgba(255,255,255,0.3)";
+                ctx.beginPath();
+                ctx.arc(f.x - f.radius/3, f.y - f.radius/3, f.radius/4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw current fruit aiming
+            if (gameActive) {
+                const type = fruitTypes[currentFruitType];
+                ctx.fillStyle = type.color;
+                ctx.globalAlpha = 0.5;
+                ctx.beginPath();
+                ctx.arc(dropX, 40, type.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+
+                // Line
+                ctx.strokeStyle = "#ccc";
+                ctx.beginPath();
+                ctx.moveTo(dropX, 40);
+                ctx.lineTo(dropX, height);
+                ctx.stroke();
+            }
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        // Input
+        canvas.addEventListener('mousemove', e => {
+            const rect = canvas.getBoundingClientRect();
+            dropX = Math.max(0, Math.min(width, e.clientX - rect.left));
+        });
+
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            dropX = Math.max(0, Math.min(width, e.touches[0].clientX - rect.left));
+        }, {passive: false});
+
+        function doDrop() {
+            if(gameActive) spawnFruit(dropX);
+        }
+
+        canvas.addEventListener('click', doDrop);
+        // canvas.addEventListener('touchend', doDrop); // Double trigger issue with mouse emulation?
+        // Better:
+        let touchStart = 0;
+        canvas.addEventListener('touchstart', e => touchStart = Date.now(), {passive: false});
+        canvas.addEventListener('touchend', e => {
+            if (Date.now() - touchStart < 500) doDrop();
+        }, {passive: false});
+
+        resetGame();
+        loop();
+
+    </script>
+</body>
+</html>

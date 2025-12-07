@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penalty Shooter</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #333; font-family: 'Segoe UI', sans-serif; touch-action: none; }
+        #gameCanvas { display: block; width: 100%; height: 100%; }
+        #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        #scoreBoard { position: absolute; top: 20px; left: 0; width: 100%; text-align: center; color: white; font-size: 2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        #message { position: absolute; top: 40%; width: 100%; text-align: center; font-size: 3rem; color: yellow; font-weight: bold; opacity: 0; transition: opacity 0.5s; text-shadow: 0 4px 8px rgba(0,0,0,0.8); }
+        #startBtn { pointer-events: auto; position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); padding: 15px 40px; font-size: 1.5rem; background: #2ecc71; color: white; border: none; border-radius: 30px; cursor: pointer; display: none; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui">
+        <div id="scoreBoard">GOALS: <span id="scoreVal">0</span> | SAVES: <span id="missVal">0</span></div>
+        <div id="message">GOAL!</div>
+        <button id="startBtn" onclick="resetGame()">PLAY AGAIN</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        // Game State
+        let ball = { x: 0, y: 0, z: 0, dx: 0, dy: 0, dz: 0, radius: 15 };
+        let keeper = { x: 0, y: 0, width: 60, height: 120, tx: 0, state: 'idle' }; // tx: target x
+        let state = 'aim'; // aim, shoot, result, replay
+        let score = 0;
+        let misses = 0;
+        let dragStart = null;
+
+        // Constants
+        const goalWidth = 600;
+        const goalHeight = 250;
+        const goalZ = 600;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            resetBall();
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function resetBall() {
+            ball.x = 0;
+            ball.y = height - 100; // Screen Y
+            ball.z = 0;
+            ball.dx = 0;
+            ball.dy = 0;
+            ball.dz = 0;
+            state = 'aim';
+            keeper.x = 0;
+            keeper.state = 'idle';
+        }
+
+        function resetGame() {
+            score = 0;
+            misses = 0;
+            document.getElementById('scoreVal').innerText = 0;
+            document.getElementById('missVal').innerText = 0;
+            document.getElementById('startBtn').style.display = 'none';
+            resetBall();
+        }
+
+        // Input - Swipe to shoot
+        document.addEventListener('touchstart', e => {
+            if (state !== 'aim') return;
+            dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
+        }, {passive: false});
+
+        document.addEventListener('touchend', e => {
+            if (state !== 'aim' || !dragStart) return;
+            const x = e.changedTouches[0].clientX;
+            const y = e.changedTouches[0].clientY;
+            const time = Date.now();
+            processSwipe(x, y, time);
+        }, {passive: false});
+
+        document.addEventListener('mousedown', e => {
+            if (state !== 'aim') return;
+            dragStart = { x: e.clientX, y: e.clientY, time: Date.now() };
+        });
+
+        document.addEventListener('mouseup', e => {
+            if (state !== 'aim' || !dragStart) return;
+            processSwipe(e.clientX, e.clientY, Date.now());
+        });
+
+        function processSwipe(x, y, time) {
+            const dt = time - dragStart.time;
+            const dx = x - dragStart.x;
+            const dy = y - dragStart.y;
+
+            if (dy < -20 && dt < 500) { // Valid upward swipe
+                // Calculate shot vector
+                // Speed depends on swipe speed
+                const power = Math.min(30, Math.sqrt(dx*dx + dy*dy) / dt * 20);
+
+                // Direction
+                // x factor: how much to the side
+                const angleX = dx * 0.01;
+
+                ball.dx = angleX * power;
+                ball.dy = -power * 0.5; // Upward arc
+                ball.dz = power;
+
+                state = 'shoot';
+
+                // Keeper AI decision immediately
+                // Predict where ball goes at Z = goalZ
+                // Simple prediction: Random + bias towards ball
+                keeper.tx = ball.dx * (goalZ / ball.dz);
+                // Add error
+                if (Math.random() < 0.3) keeper.tx += (Math.random()-0.5) * 200;
+
+                // Clamp keeper target
+                keeper.tx = Math.max(-goalWidth/2 + 20, Math.min(goalWidth/2 - 20, keeper.tx));
+            }
+        }
+
+        function update() {
+            if (state === 'shoot') {
+                // Move Ball (3Dish physics)
+                ball.x += ball.dx;
+                ball.y += ball.dy; // Screen Y actually represents Y + Z projection somewhat
+                ball.z += ball.dz;
+
+                ball.dy += 0.5; // Gravity on Y (Screen Y)
+
+                // Keeper move
+                keeper.x += (keeper.tx - keeper.x) * 0.1;
+
+                // Check if ball reached goal line
+                if (ball.z >= goalZ) {
+                    checkGoal();
+                }
+            }
+        }
+
+        function checkGoal() {
+            state = 'result';
+
+            // Check boundaries relative to goal center
+            // Goal is centered at width/2
+            // Ball X is relative to screen center? No, ball.x started at 0 (center)
+
+            // Proj:
+            const scale = 200 / (200 + ball.z); // Simple perspective scaling
+            // wait, my logic for ball.x is raw world coords.
+
+            // Goal limits
+            const ballWorldX = ball.x;
+            const ballWorldY = ball.y - (height - 100); // Relative to start height... this is messy.
+
+            // Let's rely on visual hit detection logic simplified:
+            // Goal is roughly -goalWidth/2 to goalWidth/2 in X
+            // Height: 0 to goalHeight
+
+            // But I'm simulating ball.y in screen space directly above.
+            // Let's re-eval coordinate system.
+            // Start: (0, 0, 0)
+            // Goal: (0, goalHeight_World, goalZ)
+            // Screen Y = WorldY projected.
+
+            // Simplified:
+            // Ball.y started at height-100.
+            // If ball.y is "above" ground and "below" crossbar?
+            // Ground at height-250 (perspective horizon).
+
+            // Let's assume the goal rect on screen at Z=goalZ is:
+            // CenterX = width/2
+            // BottomY = height/2 + 50
+            // TopY = height/2 + 50 - 150 (projected height)
+            // Width = 300 (projected width)
+
+            // Keeper rect:
+            // CenterX = width/2 + keeper.x * scale
+
+            // This is getting complex for a single file without a 3D engine.
+            // Let's use simple 2D collision at the "end" frame.
+
+            // Where is the ball on screen?
+            const screenX = width/2 + ball.x;
+            const screenY = ball.y;
+
+            // Define Goal Screen Rect
+            const gCenter = width/2;
+            const gBottom = height/2 + 100;
+            const gTop = gBottom - 180;
+            const gLeft = gCenter - 250;
+            const gRight = gCenter + 250;
+
+            // Define Keeper Screen Rect
+            const kX = width/2 + keeper.x; // Keeper world x maps 1:1 roughly at goal line for simplicity? No.
+            // Let's scale keeper X
+            // keeper.tx was calculated based on ball.dx.
+
+            const kRect = {
+                l: (width/2 + keeper.x) - 40,
+                r: (width/2 + keeper.x) + 40,
+                t: gBottom - 100, // Keeper height
+                b: gBottom
+            };
+
+            let isGoal = false;
+            let msg = "MISS!";
+            let col = "red";
+
+            if (screenX > gLeft && screenX < gRight && screenY > gTop && screenY < gBottom) {
+                // Inside goal frame
+                // Check Keeper
+                if (screenX > kRect.l && screenX < kRect.r && screenY > kRect.t) {
+                    msg = "SAVED!";
+                    col = "orange";
+                } else {
+                    isGoal = true;
+                    msg = "GOAL!";
+                    col = "#2ecc71";
+                }
+            }
+
+            const msgEl = document.getElementById('message');
+            msgEl.innerText = msg;
+            msgEl.style.color = col;
+            msgEl.style.opacity = 1;
+
+            if (isGoal) score++; else misses++;
+
+            document.getElementById('scoreVal').innerText = score;
+            document.getElementById('missVal').innerText = misses;
+
+            setTimeout(() => {
+                msgEl.style.opacity = 0;
+                if (misses >= 3) {
+                     alert("Game Over! Final Score: " + score);
+                     document.getElementById('startBtn').style.display = 'block';
+                } else {
+                     resetBall();
+                }
+            }, 2000);
+        }
+
+        function draw() {
+            // Sky
+            ctx.fillStyle = "#2c3e50";
+            ctx.fillRect(0, 0, width, height);
+
+            // Grass
+            ctx.fillStyle = "#27ae60";
+            ctx.fillRect(0, height/2 + 100, width, height);
+
+            // Goal (Projected)
+            const gBottom = height/2 + 100;
+            const gTop = gBottom - 180;
+            const gWidth = 500;
+            const gLeft = width/2 - gWidth/2;
+            const gRight = width/2 + gWidth/2;
+
+            // Net
+            ctx.strokeStyle = "rgba(255,255,255,0.2)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for(let x=gLeft; x<=gRight; x+=20) { ctx.moveTo(x, gTop); ctx.lineTo(x, gBottom); }
+            for(let y=gTop; y<=gBottom; y+=20) { ctx.moveTo(gLeft, y); ctx.lineTo(gRight, y); }
+            ctx.stroke();
+
+            // Posts
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 10;
+            ctx.beginPath();
+            ctx.moveTo(gLeft, gBottom);
+            ctx.lineTo(gLeft, gTop);
+            ctx.lineTo(gRight, gTop);
+            ctx.lineTo(gRight, gBottom);
+            ctx.stroke();
+
+            // Keeper
+            // Scale keeper based on Z? He's always at goal.
+            const kX = width/2 + keeper.x;
+            const kY = gBottom;
+
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillRect(kX - 30, kY - 90, 60, 90);
+            // Arms
+            ctx.fillStyle = "#c0392b";
+            if (state === 'shoot') {
+                 // Raising arms towards ball?
+                 // Simple rects
+                 ctx.fillRect(kX - 50, kY - 110, 20, 60);
+                 ctx.fillRect(kX + 30, kY - 110, 20, 60);
+            }
+
+            // Ball
+            const bScale = Math.max(0.5, 1 - ball.z / 1000);
+            const bx = width/2 + ball.x; // Simplified X projection
+            const by = ball.y;
+
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(bx, by, ball.radius * bScale, 0, Math.PI * 2);
+            ctx.fill();
+            // Ball detail (soccer pattern)
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc(bx + 4*bScale, by - 4*bScale, 5*bScale, 0, Math.PI*2);
+            ctx.fill();
+
+            // Arrow (Aim)
+            if (state === 'aim') {
+                ctx.fillStyle = "rgba(255,255,0,0.5)";
+                ctx.beginPath();
+                ctx.moveTo(width/2, ball.y - 30);
+                ctx.lineTo(width/2 - 10, ball.y - 10);
+                ctx.lineTo(width/2 + 10, ball.y - 10);
+                ctx.fill();
+
+                ctx.font = "20px Arial";
+                ctx.textAlign = "center";
+                ctx.fillStyle = "white";
+                ctx.fillText("SWIPE UP TO SHOOT", width/2, ball.y + 50);
+            }
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+        loop();
+        resetBall();
+    </script>
+</body>
+</html>

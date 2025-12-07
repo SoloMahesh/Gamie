@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Othello</title>
+    <style>
+        body { margin: 0; background: #222; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; }
+        #board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; background: #333; padding: 5px; border-radius: 5px; max-width: 90vw; max-height: 90vw; aspect-ratio: 1; }
+        .cell { width: 40px; height: 40px; background: #008800; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .disc { width: 80%; height: 80%; border-radius: 50%; transition: transform 0.3s; }
+        .disc.black { background: black; box-shadow: 2px 2px 5px rgba(255,255,255,0.2); }
+        .disc.white { background: white; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+        .disc.hint { background: rgba(0,0,0,0.2); width: 30%; height: 30%; }
+        #info { margin-bottom: 20px; text-align: center; }
+        .score-box { display: flex; gap: 20px; font-size: 1.5rem; margin-top: 10px; }
+        .score-item { display: flex; align-items: center; gap: 10px; }
+        .indicator { width: 20px; height: 20px; border-radius: 50%; }
+        button { padding: 10px 20px; background: #444; color: white; border: none; cursor: pointer; margin-top: 20px; border-radius: 5px; font-size: 1rem; }
+
+        @media (min-width: 600px) {
+            .cell { width: 60px; height: 60px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h1>Othello</h1>
+        <div id="turnDisplay">Black's Turn</div>
+        <div class="score-box">
+            <div class="score-item"><div class="indicator" style="background:black"></div> <span id="blackScore">2</span></div>
+            <div class="score-item"><div class="indicator" style="background:white"></div> <span id="whiteScore">2</span></div>
+        </div>
+    </div>
+
+    <div id="board"></div>
+
+    <button onclick="resetGame()">New Game</button>
+
+    <script>
+        const boardEl = document.getElementById('board');
+        const turnDisplay = document.getElementById('turnDisplay');
+        const blackScoreEl = document.getElementById('blackScore');
+        const whiteScoreEl = document.getElementById('whiteScore');
+
+        let board = [];
+        let currentPlayer = 1; // 1 = Black, -1 = White
+        let canMove = true;
+
+        function init() {
+            // 8x8 Board
+            board = Array(8).fill().map(() => Array(8).fill(0));
+            // Setup center
+            board[3][3] = -1;
+            board[3][4] = 1;
+            board[4][3] = 1;
+            board[4][4] = -1;
+
+            currentPlayer = 1;
+            render();
+            checkGameState();
+        }
+
+        function render() {
+            boardEl.innerHTML = '';
+            let validMoves = getValidMoves(currentPlayer);
+
+            for(let r=0; r<8; r++) {
+                for(let c=0; c<8; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+                    cell.onclick = () => handleClick(r, c);
+
+                    if (board[r][c] !== 0) {
+                        const disc = document.createElement('div');
+                        disc.className = 'disc ' + (board[r][c] === 1 ? 'black' : 'white');
+                        cell.appendChild(disc);
+                    } else if (validMoves.find(m => m.r === r && m.c === c)) {
+                        const hint = document.createElement('div');
+                        hint.className = 'disc hint';
+                        cell.appendChild(hint);
+                    }
+
+                    boardEl.appendChild(cell);
+                }
+            }
+            updateUI();
+        }
+
+        function updateUI() {
+            let b = 0, w = 0;
+            board.forEach(row => row.forEach(c => {
+                if(c === 1) b++;
+                if(c === -1) w++;
+            }));
+            blackScoreEl.innerText = b;
+            whiteScoreEl.innerText = w;
+            turnDisplay.innerText = (currentPlayer === 1 ? "Black" : "White") + "'s Turn";
+        }
+
+        function getValidMoves(player) {
+            let moves = [];
+            for(let r=0; r<8; r++) {
+                for(let c=0; c<8; c++) {
+                    if (board[r][c] !== 0) continue;
+                    if (canFlip(r, c, player)) {
+                        moves.push({r, c});
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function canFlip(r, c, player) {
+            const directions = [
+                [-1, -1], [-1, 0], [-1, 1],
+                [0, -1],           [0, 1],
+                [1, -1],  [1, 0],  [1, 1]
+            ];
+
+            for (let d of directions) {
+                let dr = d[0], dc = d[1];
+                let nr = r + dr, nc = c + dc;
+                let hasOpponent = false;
+
+                while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+                    if (board[nr][nc] === 0) break;
+                    if (board[nr][nc] === -player) {
+                        hasOpponent = true;
+                    } else if (board[nr][nc] === player) {
+                        if (hasOpponent) return true;
+                        break;
+                    }
+                    nr += dr;
+                    nc += dc;
+                }
+            }
+            return false;
+        }
+
+        function flip(r, c, player) {
+            const directions = [
+                [-1, -1], [-1, 0], [-1, 1],
+                [0, -1],           [0, 1],
+                [1, -1],  [1, 0],  [1, 1]
+            ];
+
+            board[r][c] = player;
+
+            for (let d of directions) {
+                let dr = d[0], dc = d[1];
+                let nr = r + dr, nc = c + dc;
+                let flippable = [];
+
+                while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+                    if (board[nr][nc] === 0) break;
+                    if (board[nr][nc] === -player) {
+                        flippable.push({r: nr, c: nc});
+                    } else if (board[nr][nc] === player) {
+                        flippable.forEach(p => board[p.r][p.c] = player);
+                        break;
+                    }
+                    nr += dr;
+                    nc += dc;
+                }
+            }
+        }
+
+        function handleClick(r, c) {
+            if (!canMove) return;
+            if (board[r][c] !== 0) return;
+
+            if (canFlip(r, c, currentPlayer)) {
+                flip(r, c, currentPlayer);
+                currentPlayer *= -1;
+                render();
+                checkGameState();
+
+                if (currentPlayer === -1) {
+                    // Simple AI
+                    canMove = false;
+                    setTimeout(aiMove, 500);
+                }
+            }
+        }
+
+        function aiMove() {
+            let moves = getValidMoves(currentPlayer);
+            if (moves.length > 0) {
+                // Pick best move (most flips)
+                // Or just random for now
+                let bestMove = moves[0];
+                let bestScore = -1;
+
+                // Simple heuristic: Corner > Edge > Most Flips
+                moves.forEach(m => {
+                    let score = 0;
+                    if ((m.r === 0 || m.r === 7) && (m.c === 0 || m.c === 7)) score += 100;
+                    else if (m.r === 0 || m.r === 7 || m.c === 0 || m.c === 7) score += 10;
+
+                    // Count flips would be better but requires logic duplication
+                    score += Math.random(); // Random tie break
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = m;
+                    }
+                });
+
+                flip(bestMove.r, bestMove.c, currentPlayer);
+                currentPlayer *= -1;
+                render();
+                canMove = true;
+                checkGameState();
+            } else {
+                // AI Pass
+                currentPlayer *= -1;
+                render();
+                canMove = true;
+                checkGameState();
+            }
+        }
+
+        function checkGameState() {
+            let p1Moves = getValidMoves(1).length;
+            let p2Moves = getValidMoves(-1).length;
+
+            if (p1Moves === 0 && p2Moves === 0) {
+                let b = 0, w = 0;
+                board.forEach(row => row.forEach(c => {
+                    if(c === 1) b++;
+                    if(c === -1) w++;
+                }));
+                let msg = b > w ? "Black Wins!" : (w > b ? "White Wins!" : "Draw!");
+                setTimeout(() => alert(msg), 100);
+                return;
+            }
+
+            if (currentPlayer === 1 && p1Moves === 0) {
+                alert("Black passes!");
+                currentPlayer = -1;
+                setTimeout(aiMove, 1000);
+            } else if (currentPlayer === -1 && p2Moves === 0) {
+                alert("White passes!");
+                currentPlayer = 1;
+            }
+        }
+
+        function resetGame() {
+            init();
+        }
+
+        init();
+    </script>
+</body>
+</html>
