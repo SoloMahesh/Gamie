@@ -191,6 +191,7 @@
 
         // Touch
         document.addEventListener('touchstart', (e) => {
+            if (e.target.tagName === 'BUTTON') return;
             e.preventDefault();
             const touchX = e.touches[0].clientX;
             const centerX = window.innerWidth / 2;

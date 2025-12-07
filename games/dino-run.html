@@ -11,6 +11,8 @@
         #gameOver { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
         button { padding: 10px 20px; font-size: 1.5rem; background: #535353; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; }
         .instructions { position: absolute; bottom: 50px; color: #999; }
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        #finalScore { display: inline-block; }
     </style>
 </head>
 <body>
@@ -19,6 +21,7 @@
 
     <div id="gameOver">
         <h1 style="color: white;">GAME OVER</h1>
+        <p style="color: white; font-size: 24px; margin: 10px 0;">Score: <span id="finalScore">0</span></p>
         <button onclick="resetGame()">Restart</button>
     </div>
 
@@ -133,6 +136,11 @@
                     dino.y < o.y + o.h &&
                     dino.y + dino.h > o.y) {
                     gameRunning = false;
+                    document.getElementById('finalScore').innerText = score;
+                    const finalScoreEl = document.getElementById('finalScore');
+                    finalScoreEl.style.animation = 'none';
+                    finalScoreEl.offsetHeight; /* trigger reflow */
+                    finalScoreEl.style.animation = 'popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
                     document.getElementById('gameOver').style.display = 'flex';
                 }
 
@@ -155,6 +163,7 @@
 
         // Input
         function handleInput(e) {
+            if (e.target.tagName === 'BUTTON') return;
             if (e.type === 'keydown') {
                 if (e.code === 'Space' || e.code === 'ArrowUp') dino.jump();
             } else {
