@@ -369,8 +369,9 @@
             if (currentBubble) {
                 if (!currentBubble.stopped) currentBubble.update();
                 else {
-                    // Update angle based on mouse/touch
-                    // Done in event listeners
+                    // Force position update to center bottom for visual consistency before shooting
+                    currentBubble.x = width / 2;
+                    currentBubble.y = height - 50;
                 }
                 currentBubble.draw();
             }
