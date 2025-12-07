@@ -45,8 +45,8 @@
             radius: 12,
             frame: 0,
             velocity: 0,
-            gravity: 0.25,
-            jump: 4.6,
+            gravity: 0.15,  /* Reduced gravity */
+            jump: 3.6,      /* Reduced jump */
             rotation: 0,
 
             draw: function() {
@@ -136,7 +136,7 @@
             w: 52,
             h: 400,
             gap: 120, // Increased gap for better playability
-            dx: 2,
+            dx: 1.5,  /* Reduced speed */
 
             draw: function() {
                 for(let i = 0; i < this.position.length; i++) {
@@ -227,7 +227,10 @@
         }
 
         // Control
-        function action() {
+        function action(e) {
+             // Prevent bubbling
+             if (e && e.target && (e.target.tagName === 'BUTTON' || e.target.closest('button'))) return;
+
             switch(state.current) {
                 case state.getReady:
                     state.current = state.game;
@@ -244,7 +247,12 @@
             if(e.code === 'Space' || e.key === ' ') action();
         });
         document.addEventListener('mousedown', action);
-        document.addEventListener('touchstart', (e) => { e.preventDefault(); action(); }, {passive: false});
+        document.addEventListener('touchstart', (e) => {
+            // Check target for button
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+            e.preventDefault();
+            action(e);
+        }, {passive: false});
 
         function resetGame() {
             bird.velocity = 0;

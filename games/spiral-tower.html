@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spiral Tower</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #eee; font-family: 'Segoe UI', sans-serif; touch-action: none; }
+        canvas { display: block; width: 100%; height: 100%; }
+        #score { position: absolute; top: 20px; left: 20px; font-size: 3rem; color: #333; pointer-events: none; font-weight: bold; }
+        #gameOver { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; }
+        h1 { font-size: 3rem; margin-bottom: 20px; color: #333; }
+        button { padding: 15px 40px; font-size: 1.5rem; background: #e74c3c; color: white; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4); }
+    </style>
+</head>
+<body>
+    <div id="score">0</div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="gameOver">
+        <h1>Game Over</h1>
+        <p style="font-size: 2rem; margin-bottom: 30px;">Score: <span id="finalScore">0</span></p>
+        <button onclick="startGame()">Try Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let score = 0;
+        let gameActive = false;
+
+        // Game Params
+        const towerRadius = 100;
+        const poleRadius = 20;
+        let rotation = 0;
+        let targetRotation = 0;
+        let floors = [];
+        let ball = { y: 0, dy: 0, state: 'bounce' }; // state: bounce, fall
+        let cameraY = 0;
+        let floorGap = 150;
+        let bounceHeight = 15;
+        let gravity = 0.6;
+        let ballRadius = 10;
+        let colorHue = 0;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function startGame() {
+            score = 0;
+            rotation = 0;
+            targetRotation = 0;
+            floors = [];
+            ball = { y: height / 3, dy: 0, state: 'bounce', z: towerRadius + 10 };
+            cameraY = 0;
+            colorHue = Math.random() * 360;
+
+            // Generate floors
+            for (let i = 0; i < 50; i++) { // Infinite generation logic needed later, but pregen for now
+                addFloor(i);
+            }
+
+            gameActive = true;
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('score').innerText = score;
+            lastTime = performance.now();
+            requestAnimationFrame(loop);
+        }
+
+        function addFloor(index) {
+            // Gap logic
+            const gapSize = Math.PI / 2; // 90 degrees
+            const gapPos = Math.random() * Math.PI * 2;
+
+            floors.push({
+                y: (index + 1) * floorGap,
+                gapPos: gapPos,
+                gapSize: gapSize,
+                passed: false,
+                color: `hsl(${(colorHue + index * 10) % 360}, 70%, 50%)`,
+                hazards: index > 5 && Math.random() > 0.5 ? [ (gapPos + Math.PI) % (Math.PI*2) ] : []
+                // Hazards logic simple for now: maybe a red zone
+            });
+        }
+
+        let lastTime = 0;
+
+        // Input
+        let isDragging = false;
+        let lastX = 0;
+
+        document.addEventListener('mousedown', e => { isDragging = true; lastX = e.clientX; });
+        document.addEventListener('mousemove', e => {
+            if (isDragging) {
+                const dx = e.clientX - lastX;
+                targetRotation += dx * 0.01;
+                lastX = e.clientX;
+            }
+        });
+        document.addEventListener('mouseup', () => isDragging = false);
+
+        document.addEventListener('touchstart', e => { isDragging = true; lastX = e.touches[0].clientX; }, {passive: false});
+        document.addEventListener('touchmove', e => {
+            if (isDragging) {
+                e.preventDefault();
+                const dx = e.touches[0].clientX - lastX;
+                targetRotation += dx * 0.01;
+                lastX = e.touches[0].clientX;
+            }
+        }, {passive: false});
+        document.addEventListener('touchend', () => isDragging = false);
+
+
+        function update(dt) {
+            // Smooth rotation
+            rotation += (targetRotation - rotation) * 0.2;
+
+            // Normalize rotation 0-2PI
+            let normRot = rotation % (Math.PI * 2);
+            if (normRot < 0) normRot += Math.PI * 2;
+
+            // Ball physics
+            ball.dy += gravity;
+            ball.y += ball.dy;
+
+            // Camera follow
+            const targetCamY = ball.y - height / 3;
+            if (targetCamY > cameraY) {
+                cameraY = targetCamY;
+            }
+            // Auto scroll catchup? No, usually static relative to screen
+
+            // Collision check with floors
+            // Find floor just below ball
+            const ballBottom = ball.y + ballRadius;
+
+            // We check against all visible floors
+            floors.forEach(f => {
+                // If ball is falling through the floor plane
+                if (ball.dy > 0 && ballBottom >= f.y && ballBottom - ball.dy < f.y) {
+                    // Check angle
+                    // Ball angle is fixed at PI/2 (front of cylinder)
+                    // Floor rotation means we effectively check gap at -rotation + PI/2 ?
+
+                    // Let's think relative to the tower.
+                    // Ball is at angle 0 relative to screen center (front).
+                    // Tower rotates.
+                    // So we check if angle 0 is inside the gap of the rotated floor.
+
+                    // Gap is at f.gapPos to f.gapPos + f.gapSize on the tower.
+                    // The tower is rotated by `rotation`.
+                    // So the gap's screen angle is f.gapPos + rotation.
+                    // We need to check if angle PI/2 (front) is within [f.gapPos + rotation, f.gapPos + gapSize + rotation]
+                    // Actually, simpler:
+                    // Transform ball angle (PI/2) into tower space: angle - rotation.
+                    // Check if that is in [gapPos, gapPos + gapSize].
+
+                    let ballAngle = Math.PI / 2 - rotation;
+                    ballAngle = ballAngle % (Math.PI * 2);
+                    if (ballAngle < 0) ballAngle += Math.PI * 2;
+
+                    // Check gap
+                    let inGap = isAngleInArc(ballAngle, f.gapPos, f.gapSize);
+
+                    if (inGap) {
+                        // Fall through
+                        // Score effect
+                        if (!f.passed) {
+                            score++;
+                            f.passed = true;
+                            document.getElementById('score').innerText = score;
+
+                            // Generate new floor
+                            addFloor(floors.length);
+                        }
+                    } else {
+                        // Bounce
+                        ball.y = f.y - ballRadius;
+                        ball.dy = -bounceHeight;
+
+                        // Check hazards
+                        // Hazard logic: if we land on a "red" segment.
+                        // Implemented later for simplicity
+                    }
+                }
+            });
+
+            // Death condition: Missed too many floors? No, usually infinite unless time limit or hit red.
+            // For now, infinite bouncing.
+        }
+
+        function isAngleInArc(angle, start, size) {
+            // Arc is from start to start+size. All mod 2PI.
+            // Normalize all to 0-2PI
+            let end = (start + size) % (Math.PI * 2);
+
+            if (start < end) {
+                return angle >= start && angle <= end;
+            } else {
+                // Wrap around
+                return angle >= start || angle <= end;
+            }
+        }
+
+        function render() {
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.save();
+            ctx.translate(width / 2, -cameraY + height/2); // Center X, scroll Y
+
+            // Draw Pole
+            ctx.fillStyle = "#ddd";
+            ctx.fillRect(-poleRadius, cameraY - height/2, poleRadius*2, height * 2);
+
+            // Draw Floors
+            // Sort to draw back to front? Not strictly necessary for simple 2D projection, but nice.
+            // We just iterate.
+
+            floors.forEach(f => {
+                if (f.y < cameraY - 200 || f.y > cameraY + height + 200) return;
+
+                const y = f.y;
+                // Draw ellipses
+                // We draw the ring in segments
+
+                // Front and back
+                // We draw the full ring as a path, minus the gap
+
+                // Rotation
+                const startAngle = 0;
+                const endAngle = Math.PI * 2;
+
+                // We need to draw the arc excluding the gap
+                // Visual Rotation: f.gapPos + rotation
+
+                let gapStart = f.gapPos + rotation;
+                let gapEnd = f.gapPos + f.gapSize + rotation;
+
+                // Draw the "Solid" part which is from gapEnd to gapStart (wrapped)
+
+                ctx.beginPath();
+                ctx.lineWidth = 20; // Height of floor ledge? No, width of ring.
+
+                // Actually 3D effect: use scaleY
+                const scaleY = 0.3;
+
+                // Draw Ring
+                for (let i = 0; i < 60; i++) {
+                    let a1 = (i / 60) * Math.PI * 2;
+                    let a2 = ((i + 1) / 60) * Math.PI * 2;
+
+                    // Check if this segment is in gap
+                    // Angle in tower space: a1 - rotation
+                    // Actually, let's just use the logic:
+                    let checkA = a1 - rotation;
+                    checkA %= (Math.PI*2);
+                    if(checkA < 0) checkA += Math.PI*2;
+
+                    if (!isAngleInArc(checkA, f.gapPos, f.gapSize)) {
+                        // Draw segment
+                        // Project to pseudo-3D
+                        let x1 = Math.cos(a1) * towerRadius;
+                        let y1 = Math.sin(a1) * towerRadius * scaleY + y;
+                        let x2 = Math.cos(a2) * towerRadius;
+                        let y2 = Math.sin(a2) * towerRadius * scaleY + y;
+
+                        ctx.strokeStyle = f.color;
+
+                        // Darken back
+                        if (Math.sin(a1) < 0) ctx.strokeStyle = adjustColor(f.color, -30);
+
+                        ctx.lineWidth = 20; // Thickness of the disc rim
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+
+                        // Draw "Side" (cylinder height) for 3D thickness
+                        ctx.fillStyle = adjustColor(f.color, -50);
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.lineTo(x2, y2 + 10);
+                        ctx.lineTo(x1, y1 + 10);
+                        ctx.fill();
+                    }
+                }
+            });
+
+            // Draw Ball
+            ctx.fillStyle = "#e74c3c";
+            ctx.beginPath();
+            ctx.arc(0, ball.y, ballRadius, 0, Math.PI * 2);
+            ctx.fill();
+            // Shine
+            ctx.fillStyle = "rgba(255,255,255,0.5)";
+            ctx.beginPath();
+            ctx.arc(-3, ball.y - 3, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // Helper to darken HSL
+        function adjustColor(hsl, amount) {
+            // Parse hsl(h, s%, l%)
+            let parts = hsl.match(/hsl\((\d+\.?\d*),\s*(\d+)%,\s*(\d+)%\)/);
+            if(parts) {
+                let l = Math.max(0, Math.min(100, parseInt(parts[3]) + amount));
+                return `hsl(${parts[1]}, ${parts[2]}%, ${l}%)`;
+            }
+            return hsl;
+        }
+
+        function loop() {
+            if (!gameActive) return;
+            update();
+            render();
+            requestAnimationFrame(loop);
+        }
+
+        startGame();
+
+    </script>
+</body>
+</html>
