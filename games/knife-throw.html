@@ -1,29 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Knife Throw</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #2c3e50; font-family: 'Segoe UI', sans-serif; touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        canvas { box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 5px; cursor: pointer; }
-        #score { position: absolute; top: 10%; font-size: 3rem; color: rgba(255,255,255,0.8); font-weight: bold; pointer-events: none; }
-        #knivesLeft { position: absolute; bottom: 10%; display: flex; gap: 5px; opacity: 0.8; pointer-events: none; }
-        .knife-icon { width: 10px; height: 30px; background: #bdc3c7; clip-path: polygon(0 0, 100% 0, 50% 100%); }
-        .knife-icon.used { background: #555; }
-        #msg { position: absolute; background: rgba(0,0,0,0.9); padding: 40px; text-align: center; color: white; display: none; border-radius: 10px; }
-        button { padding: 10px 20px; font-size: 1.2rem; margin-top: 10px; background: #e67e22; border: none; color: white; cursor: pointer; border-radius: 5px; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #2c3e50;
+            font-family: 'Segoe UI', sans-serif;
+            touch-action: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        canvas {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #score {
+            position: absolute;
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: bold;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        #levelInfo {
+            position: absolute;
+            top: 12%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.7);
+            pointer-events: none;
+        }
+
+        #knivesLeft {
+            position: absolute;
+            bottom: 8%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .knife-icon {
+            width: 10px;
+            height: 30px;
+            background: #bdc3c7;
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+        }
+
+        .knife-icon.used {
+            background: #555;
+        }
+
+        #msg {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 40px;
+            text-align: center;
+            color: white;
+            display: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        #msg h2 {
+            margin: 0 0 20px;
+            font-size: 2.5rem;
+        }
+
+        #msg p {
+            margin: 10px 0;
+            font-size: 1.2rem;
+            color: #bdc3c7;
+        }
+
+        .high-score-msg {
+            color: #f1c40f !important;
+            font-size: 1.5rem !important;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.3rem;
+            margin: 10px 5px;
+            background: #e67e22;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        #instructionScreen {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 40px;
+            text-align: center;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+            z-index: 20;
+        }
+
+        #instructionScreen h2 {
+            margin: 0 0 20px;
+            font-size: 2.5rem;
+            color: #e67e22;
+        }
+
+        #instructionScreen ul {
+            text-align: left;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin: 20px 0;
+        }
+
+        #instructionScreen li {
+            margin: 10px 0;
+        }
+
+        .apple-icon {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .knife-icon-text {
+            color: #bdc3c7;
+            font-weight: bold;
+        }
     </style>
 </head>
+
 <body>
-    <div id="score">0</div>
+    <div id="score">Score: 0<br><span style="font-size: 0.5em; color: #f39c12;">Best: <span
+                id="bestScore">0</span></span></div>
+    <div id="levelInfo">Level 1 of 15</div>
     <canvas id="gameCanvas"></canvas>
     <div id="knivesLeft"></div>
 
     <div id="msg">
         <h2 id="msgText">Stage Cleared!</h2>
-        <button onclick="nextStage()" id="nextBtn">Next Stage</button>
+        <p id="msgDetails"></p>
+        <p id="highScoreNote" style="display:none" class="high-score-msg">🏆 NEW HIGH SCORE! 🏆</p>
+        <button onclick="nextStage()" id="nextBtn">Next Level</button>
         <button onclick="restartGame()" id="restartBtn" style="display:none">Try Again</button>
+    </div>
+
+    <div id="instructionScreen">
+        <h2>🎯 Knife Throw 🎯</h2>
+        <ul>
+            <li>🎮 <strong>Tap/Click</strong> to throw knives at the rotating target</li>
+            <li>🔪 Stick all <span class="knife-icon-text">knives</span> without hitting others</li>
+            <li>🍎 Hit <span class="apple-icon">apples</span> for +5 bonus points!</li>
+            <li>📈 Complete 15 levels with increasing difficulty</li>
+            <li>⚡ Speed and obstacles increase each level</li>
+        </ul>
+        <button onclick="startGameFromInstructions()"
+            style="background: #27ae60; font-size: 1.5rem; padding: 20px 40px;">START GAME</button>
     </div>
 
     <script>
@@ -35,8 +198,32 @@
         // Game State
         let stage = 1;
         let score = 0;
-        let target = { angle: 0, speed: 0.02, radius: 80, objects: [] }; // objects: {angle, type: 'knife'|'apple'}
-        let currentKnife = null; // { y: ... }
+        let highScore = parseInt(localStorage.getItem('knifeThrowHighScore')) || 0;
+        let highestLevel = parseInt(localStorage.getItem('knifeThrowHighestLevel')) || 1;
+
+        document.getElementById('bestScore').innerText = highScore;
+
+        // Level configurations (15 progressive levels)
+        const levels = [
+            { knives: 5, speed: 0.020, reverseChance: 0, obstacles: 0, apples: 1 },     // 1: Easy intro
+            { knives: 7, speed: 0.025, reverseChance: 0, obstacles: 1, apples: 1 },     // 2
+            { knives: 8, speed: 0.030, reverseChance: 0, obstacles: 2, apples: 1 },     // 3
+            { knives: 9, speed: 0.035, reverseChance: 0.02, obstacles: 2, apples: 2 },  // 4: Intro reverse
+            { knives: 10, speed: 0.038, reverseChance: 0.03, obstacles: 3, apples: 1 }, // 5
+            { knives: 11, speed: 0.040, reverseChance: 0.04, obstacles: 3, apples: 2 }, // 6
+            { knives: 12, speed: 0.042, reverseChance: 0.05, obstacles: 4, apples: 2 }, // 7
+            { knives: 13, speed: 0.045, reverseChance: 0.06, obstacles: 4, apples: 3 }, // 8: Mid difficulty
+            { knives: 14, speed: 0.048, reverseChance: 0.07, obstacles: 5, apples: 2 }, // 9
+            { knives: 15, speed: 0.050, reverseChance: 0.08, obstacles: 5, apples: 3 }, // 10
+            { knives: 16, speed: 0.052, reverseChance: 0.09, obstacles: 6, apples: 3 }, // 11
+            { knives: 18, speed: 0.055, reverseChance: 0.10, obstacles: 6, apples: 4 }, // 12: Hard
+            { knives: 20, speed: 0.058, reverseChance: 0.12, obstacles: 7, apples: 3 }, // 13
+            { knives: 22, speed: 0.060, reverseChance: 0.15, obstacles: 8, apples: 4 }, // 14: Expert
+            { knives: 25, speed: 0.065, reverseChance: 0.18, obstacles: 9, apples: 5 }  // 15: Master
+        ];
+
+        let target = { angle: 0, speed: 0.02, radius: 80, objects: [] };
+        let currentKnife = null;
         let knivesToThrow = 7;
         let knivesThrown = 0;
         let gameActive = true;
@@ -52,32 +239,46 @@
         resize();
 
         function initStage() {
+            if (stage > levels.length) {
+                // Game completed!
+                gameWin();
+                return;
+            }
+
             target.objects = [];
             target.angle = 0;
             knivesThrown = 0;
 
-            // Difficutly
-            target.speed = 0.02 + (stage * 0.005);
-            knivesToThrow = 5 + Math.min(5, Math.floor(stage / 2));
+            const level = levels[stage - 1];
+            target.speed = level.speed;
+            knivesToThrow = level.knives;
 
-            // Add existing obstacles (simulated from prev levels or just random)
-            let obstacles = Math.floor(Math.random() * 3);
-            for(let i=0; i<obstacles; i++) {
+            // Add pre-existing knife obstacles
+            for (let i = 0; i < level.obstacles; i++) {
                 target.objects.push({
-                    angle: Math.random() * Math.PI * 2,
+                    angle: (Math.PI * 2 / level.obstacles) * i + Math.random() * 0.5,
                     type: 'knife'
                 });
             }
 
             // Add apples
-            if (Math.random() > 0.5) {
+            for (let i = 0; i < level.apples; i++) {
+                let appleAngle;
+                do {
+                    appleAngle = Math.random() * Math.PI * 2;
+                } while (target.objects.some(obj => {
+                    const diff = Math.abs(normalizeAngle(obj.angle) - normalizeAngle(appleAngle));
+                    return Math.min(diff, Math.PI * 2 - diff) < 0.3;
+                }));
+
                 target.objects.push({
-                    angle: Math.random() * Math.PI * 2,
+                    angle: appleAngle,
                     type: 'apple'
                 });
             }
 
             updateKnivesUI();
+            updateLevelInfo();
             spawnKnife();
             gameActive = true;
             document.getElementById('msg').style.display = 'none';
@@ -90,14 +291,14 @@
 
         function updateKnivesUI() {
             knivesDiv.innerHTML = '';
-            for(let i=0; i<knivesToThrow; i++) {
+            for (let i = 0; i < knivesToThrow; i++) {
                 const k = document.createElement('div');
                 k.className = 'knife-icon' + (i < (knivesToThrow - (knivesToThrow - knivesThrown)) ? ' used' : '');
                 // Actually we show remaining
                 if (i >= knivesToThrow - knivesThrown) {
-                     k.className = 'knife-icon'; // Active
+                    k.className = 'knife-icon'; // Active
                 } else {
-                     k.className = 'knife-icon used'; // Used
+                    k.className = 'knife-icon used'; // Used
                 }
                 // Wait, easier: show dots for available knives
                 // Left to right
@@ -105,12 +306,17 @@
 
             // Better: just dots for remaining
             knivesDiv.innerHTML = '';
-            for(let i=0; i<knivesToThrow - knivesThrown; i++) {
-                 const k = document.createElement('div');
-                 k.className = 'knife-icon';
-                 knivesDiv.appendChild(k);
+            for (let i = 0; i < knivesToThrow - knivesThrown; i++) {
+                const k = document.createElement('div');
+                k.className = 'knife-icon';
+                knivesDiv.appendChild(k);
             }
         }
+
+        function updateLevelInfo() {
+            document.getElementById('levelInfo').innerText = `Level ${stage} of ${levels.length}`;
+        }
+
 
         function throwKnife() {
             if (!gameActive || currentKnife.state !== 'ready') return;
@@ -141,27 +347,28 @@
 
                     let collision = false;
 
-                    for(let obj of target.objects) {
+                    for (let obj of target.objects) {
                         if (obj.type === 'knife') {
                             // Check angular distance
                             const diff = Math.abs(normalizeAngle(obj.angle) - normalizedHit);
                             // Angle minimal distance on circle
-                            const dist = Math.min(diff, Math.PI*2 - diff);
+                            const dist = Math.min(diff, Math.PI * 2 - diff);
 
                             if (dist < 0.2) { // Too close (approx 12 degrees)
                                 collision = true;
                                 break;
                             }
                         } else if (obj.type === 'apple') {
-                            // Hit apple
-                             const diff = Math.abs(normalizeAngle(obj.angle) - normalizedHit);
-                             const dist = Math.min(diff, Math.PI*2 - diff);
-                             if (dist < 0.25) {
-                                 // Sliced apple!
-                                 score += 5;
-                                 obj.dead = true;
-                                 // Remove apple
-                             }
+                            // Hit apple - more generous hit detection
+                            const diff = Math.abs(normalizeAngle(obj.angle) - normalizedHit);
+                            const dist = Math.min(diff, Math.PI * 2 - diff);
+                            if (dist < 0.3) { // Increased from 0.25 for easier hitting
+                                // Sliced apple!
+                                score += 5;
+                                obj.dead = true;
+                                // Visual feedback
+                                console.log('Apple hit! +5 points');
+                            }
                         }
                     }
 
@@ -177,7 +384,7 @@
                             type: 'knife'
                         });
                         score++;
-                        document.getElementById('score').innerText = score;
+                        document.getElementById('score').innerHTML = `Score: ${score}<br><span style="font-size: 0.5em; color: #f39c12;">Best: ${highScore}</span>`;
 
                         // Shake effect
                         target.y += 5;
@@ -204,12 +411,12 @@
 
             // Draw Target (Log)
             ctx.save();
-            ctx.translate(width/2, target.y);
+            ctx.translate(width / 2, target.y);
             ctx.rotate(target.angle);
 
             ctx.fillStyle = "#8e44ad";
             ctx.beginPath();
-            ctx.arc(0, 0, target.radius, 0, Math.PI*2);
+            ctx.arc(0, 0, target.radius, 0, Math.PI * 2);
             ctx.fill();
 
             // Draw Objects attached
@@ -224,7 +431,7 @@
                 } else if (obj.type === 'apple') {
                     ctx.fillStyle = "#e74c3c";
                     ctx.beginPath();
-                    ctx.arc(0, target.radius, 15, 0, Math.PI*2);
+                    ctx.arc(0, target.radius, 15, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.fillStyle = "#27ae60"; // Leaf
                     ctx.fillRect(-2, target.radius - 15, 4, 10);
@@ -237,23 +444,71 @@
             // Draw Current Knife
             if (currentKnife) {
                 ctx.fillStyle = "#bdc3c7";
-                ctx.fillRect(width/2 - 5, currentKnife.y, 10, 60);
+                ctx.fillRect(width / 2 - 5, currentKnife.y, 10, 60);
                 ctx.fillStyle = "#7f8c8d"; // Handle
-                ctx.fillRect(width/2 - 5, currentKnife.y + 60, 10, 30);
+                ctx.fillRect(width / 2 - 5, currentKnife.y + 60, 10, 30);
             }
         }
 
         function levelClear() {
             gameActive = false;
-            document.getElementById('msgText').innerText = "Stage " + stage + " Cleared!";
+
+            // Update high score
+            const highScoreNote = document.getElementById('highScoreNote');
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('knifeThrowHighScore', highScore);
+                document.getElementById('bestScore').innerText = highScore;
+                highScoreNote.style.display = 'block';
+            } else {
+                highScoreNote.style.display = 'none';
+            }
+
+            // Update highest level
+            if (stage > highestLevel) {
+                highestLevel = stage;
+                localStorage.setItem('knifeThrowHighestLevel', highestLevel);
+            }
+
+            document.getElementById('msgText').innerText = `🎉 Level ${stage} Cleared! 🎉`;
+            document.getElementById('msgDetails').innerText = `Score: ${score} | Knives Used: ${knivesThrown}`;
             document.getElementById('nextBtn').style.display = 'inline-block';
             document.getElementById('restartBtn').style.display = 'none';
             document.getElementById('msg').style.display = 'block';
         }
 
+        function gameWin() {
+            gameActive = false;
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('knifeThrowHighScore', highScore);
+            }
+
+            document.getElementById('msgText').innerText = '👑 GAME COMPLETED! 👑';
+            document.getElementById('msgDetails').innerText = `All 15 levels cleared!\nFinal Score: ${score}`;
+            document.getElementById('highScoreNote').style.display = score > 0 ? 'block' : 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('restartBtn').innerHTML = 'Play Again';
+            document.getElementById('restartBtn').style.display = 'inline-block';
+            document.getElementById('msg').style.display = 'block';
+        }
+
         function gameOver() {
             gameActive = false;
-            document.getElementById('msgText').innerText = "Game Over!";
+
+            const highScoreNote = document.getElementById('highScoreNote');
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('knifeThrowHighScore', highScore);
+                document.getElementById('bestScore').innerText = highScore;
+                highScoreNote.style.display = 'block';
+            } else {
+                highScoreNote.style.display = 'none';
+            }
+
+            document.getElementById('msgText').innerText = '💥 Game Over! 💥';
+            document.getElementById('msgDetails').innerText = `Level ${stage} | Score: ${score}`;
             document.getElementById('nextBtn').style.display = 'none';
             document.getElementById('restartBtn').style.display = 'inline-block';
             document.getElementById('msg').style.display = 'block';
@@ -265,9 +520,25 @@
         }
 
         function restartGame() {
+            // DO NOT reset stage - just restart the current level!
+            // stage = 1; // ❌ This was the bug!
+            score = 0;
+            document.getElementById('score').innerHTML = `Score: 0<br><span style="font-size: 0.5em; color: #f39c12;">Best: ${highScore}</span>`;
+            initStage(); // Restart current level
+        }
+
+        function resetToLevel1() {
+            // New function: actually reset to level 1 (for main menu or complete restart)
             stage = 1;
             score = 0;
-            document.getElementById('score').innerText = score;
+            document.getElementById('score').innerHTML = `Score: 0<br><span style="font-size: 0.5em; color: #f39c12;">Best: ${highScore}</span>`;
+            initStage();
+        }
+
+        function startGameFromInstructions() {
+            const instrScreen = document.getElementById('instructionScreen');
+            instrScreen.style.display = 'none';
+            // Initialize game state then start loop
             initStage();
         }
 
@@ -281,11 +552,13 @@
 
         // Input
         document.addEventListener('mousedown', throwKnife);
-        document.addEventListener('touchstart', (e) => { e.preventDefault(); throwKnife(); }, {passive: false});
-        document.addEventListener('keydown', (e) => { if(e.code === 'Space') throwKnife(); });
+        document.addEventListener('touchstart', (e) => { e.preventDefault(); throwKnife(); }, { passive: false });
+        document.addEventListener('keydown', (e) => { if (e.code === 'Space') throwKnife(); });
 
-        initStage();
+        // Don't auto-start, show instructions first
+        // initStage();
 
     </script>
 </body>
+
 </html>

@@ -1,25 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bubble Shooter</title>
     <style>
-        body { margin: 0; background: #222; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; touch-action: none; font-family: 'Segoe UI', sans-serif; }
-        canvas { background: #333; border: 2px solid #555; }
-        #ui { position: absolute; top: 10px; color: white; font-size: 24px; font-weight: bold; pointer-events: none; }
-        #gameOver { position: absolute; background: rgba(0,0,0,0.9); color: white; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        button { padding: 15px 30px; font-size: 1.5rem; background: #9c27b0; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; }
+        body {
+            margin: 0;
+            background: #222;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            touch-action: none;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        canvas {
+            background: #333;
+            border: 2px solid #555;
+        }
+
+        #ui {
+            position: absolute;
+            top: 10px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        #gameOver {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            background: #9c27b0;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
     </style>
 </head>
+
 <body>
-    <div id="ui">Score: <span id="score">0</span></div>
+    <div id="ui">Score: <span id="score">0</span> | <span style="color: #FFE138;">Best: <span
+                id="highScore">0</span></span></div>
     <canvas id="gameCanvas"></canvas>
 
     <div id="gameOver">
-        <h1>GAME OVER</h1>
+        <h1 id="gameOverTitle">GAME OVER</h1>
+        <p id="highScoreMsg" style="color: #FFE138; font-size: 1.5rem; display: none;">🏆 NEW HIGH SCORE! 🏆</p>
         <p>Score: <span id="finalScore">0</span></p>
-        <button onclick="initGame()">Try Again</button>
+        <p style="color: #888; font-size: 1rem;">Best: <span id="modalHighScore">0</span></p>
+        <button onclick="initGame()">Play Again</button>
     </div>
 
     <script>
@@ -37,6 +87,7 @@
         let currentBubble = null;
         let nextBubbleColor = null;
         let score = 0;
+        let highScore = localStorage.getItem('bubbleShooterHighScore') || 0;
         let gameActive = true;
         let angle = -Math.PI / 2;
 
@@ -52,7 +103,7 @@
 
             GRID_COLS = Math.floor(width / (BUBBLE_RADIUS * 2));
         }
-        window.addEventListener('resize', () => { resize(); if(gameActive) initGame(); });
+        window.addEventListener('resize', () => { resize(); if (gameActive) initGame(); });
         resize();
 
         class Bubble {
@@ -135,6 +186,7 @@
             document.getElementById('score').innerText = 0;
             document.getElementById('gameOver').style.display = 'none';
             gameActive = true;
+            document.getElementById('highScore').innerText = highScore;
 
             // Create initial rows
             for (let r = 0; r < 5; r++) {
@@ -223,12 +275,12 @@
             let color = startNode.color;
 
             let head = 0;
-            while(head < queue.length) {
+            while (head < queue.length) {
                 let current = queue[head++];
                 let neighbors = getNeighbors(current);
 
-                for(let n of neighbors) {
-                    if(!visited.has(n) && n.color === color) {
+                for (let n of neighbors) {
+                    if (!visited.has(n) && n.color === color) {
                         visited.add(n);
                         matches.push(n);
                         queue.push(n);
@@ -275,7 +327,7 @@
                 score += 10;
 
                 // Particles
-                for(let i=0; i<5; i++) {
+                for (let i = 0; i < 5; i++) {
                     particles.push({
                         x: b.x, y: b.y,
                         dx: (Math.random() - 0.5) * 5,
@@ -302,10 +354,10 @@
             }
 
             let head = 0;
-            while(head < queue.length) {
+            while (head < queue.length) {
                 let curr = queue[head++];
                 let neighbors = getNeighbors(curr);
-                for(let n of neighbors) {
+                for (let n of neighbors) {
                     if (!connected.has(n)) {
                         connected.add(n);
                         queue.push(n);
@@ -323,7 +375,7 @@
                         grid[r][c] = null;
                         score += 20; // Bonus
                         // Particles
-                        for(let i=0; i<5; i++) {
+                        for (let i = 0; i < 5; i++) {
                             particles.push({
                                 x: b.x, y: b.y,
                                 dx: (Math.random() - 0.5) * 5,
@@ -341,6 +393,23 @@
         function gameOver() {
             gameActive = false;
             document.getElementById('finalScore').innerText = score;
+            document.getElementById('modalHighScore').innerText = highScore;
+
+            const gameOverTitle = document.getElementById('gameOverTitle');
+            const highScoreMsg = document.getElementById('highScoreMsg');
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('bubbleShooterHighScore', highScore);
+                document.getElementById('highScore').innerText = highScore;
+                document.getElementById('modalHighScore').innerText = highScore;
+                gameOverTitle.textContent = '🎉 AMAZING! 🎉';
+                highScoreMsg.style.display = 'block';
+            } else {
+                gameOverTitle.textContent = 'GAME OVER';
+                highScoreMsg.style.display = 'none';
+            }
+
             document.getElementById('gameOver').style.display = 'flex';
         }
 
@@ -375,14 +444,14 @@
             }
 
             // Particles
-            for(let i=particles.length-1; i>=0; i--) {
+            for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
                 p.x += p.dx;
                 p.y += p.dy;
                 p.life--;
                 ctx.fillStyle = p.color;
                 ctx.fillRect(p.x, p.y, 4, 4);
-                if(p.life <= 0) particles.splice(i, 1);
+                if (p.life <= 0) particles.splice(i, 1);
             }
 
             requestAnimationFrame(loop);
@@ -409,7 +478,7 @@
             e.preventDefault();
             let rect = canvas.getBoundingClientRect();
             handleInput(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-        }, {passive: false});
+        }, { passive: false });
 
         canvas.addEventListener('touchend', e => {
             e.preventDefault();
@@ -419,4 +488,5 @@
         initGame();
     </script>
 </body>
+
 </html>

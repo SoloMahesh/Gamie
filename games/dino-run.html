@@ -1,27 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dino Run</title>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background: #f7f7f7; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; touch-action: none; }
-        canvas { border-bottom: 2px solid #535353; width: 100%; max-width: 800px; height: 300px; background: transparent; }
-        #score { position: absolute; top: 20px; right: 20px; font-size: 24px; color: #535353; font-weight: bold; }
-        #gameOver { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        button { padding: 10px 20px; font-size: 1.5rem; background: #535353; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; }
-        .instructions { position: absolute; bottom: 50px; color: #999; }
-        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        #finalScore { display: inline-block; }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #f7f7f7;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            touch-action: none;
+        }
+
+        canvas {
+            border-bottom: 2px solid #535353;
+            width: 100%;
+            max-width: 800px;
+            height: 300px;
+            background: transparent;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            color: #535353;
+            font-weight: bold;
+        }
+
+        #gameOver {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1.5rem;
+            background: #535353;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 50px;
+            color: #999;
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        #finalScore {
+            display: inline-block;
+        }
     </style>
 </head>
+
 <body>
-    <div id="score">00000</div>
+    <div id="score">00000 | <span style="color: #FFD700;">Best: <span id="highScore">00000</span></span></div>
     <canvas id="gameCanvas"></canvas>
 
     <div id="gameOver">
-        <h1 style="color: white;">GAME OVER</h1>
+        <h1 id="gameOverTitle" style="color: white;">GAME OVER</h1>
+        <p id="highScoreMsg" style="color: #FFD700; font-size: 1.5rem; display: none;">🏆 NEW HIGH SCORE! 🏆</p>
         <p style="color: white; font-size: 24px; margin: 10px 0;">Score: <span id="finalScore">0</span></p>
+        <p style="color: #ccc; font-size: 1rem;">Best: <span id="modalHighScore">00000</span></p>
         <button onclick="resetGame()">Restart</button>
     </div>
 
@@ -39,6 +112,7 @@
 
         let gameSpeed = 5;
         let score = 0;
+        let highScore = localStorage.getItem('dinoRunHighScore') || 0;
         let gameRunning = false;
         let frame = 0;
 
@@ -51,7 +125,7 @@
             jumpForce: 12,
             grounded: true,
 
-            draw: function() {
+            draw: function () {
                 ctx.fillStyle = "#535353";
                 ctx.fillRect(this.x, this.y, this.w, this.h);
                 // Eye
@@ -59,14 +133,14 @@
                 ctx.fillRect(this.x + 25, this.y + 5, 5, 5);
             },
 
-            jump: function() {
+            jump: function () {
                 if (this.grounded) {
                     this.dy = -this.jumpForce;
                     this.grounded = false;
                 }
             },
 
-            update: function() {
+            update: function () {
                 // Gravity
                 this.y += this.dy;
                 if (this.y < height - 40) {
@@ -101,6 +175,7 @@
             gameSpeed = 5;
             gameRunning = true;
             document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('highScore').innerText = String(highScore).padStart(5, '0');
             dino.y = height - 40;
             dino.dy = 0;
             requestAnimationFrame(update);
@@ -113,7 +188,7 @@
             ctx.clearRect(0, 0, width, height);
 
             // Spawn obstacles
-            if (frame % Math.floor(100 + Math.random()*50) === 0) {
+            if (frame % Math.floor(100 + Math.random() * 50) === 0) {
                 spawnObstacle();
             }
 
@@ -136,7 +211,27 @@
                     dino.y < o.y + o.h &&
                     dino.y + dino.h > o.y) {
                     gameRunning = false;
-                    document.getElementById('finalScore').innerText = score;
+
+                    // Check high score
+                    const finalScoreNum = score;
+                    document.getElementById('finalScore').innerText = finalScoreNum;
+                    document.getElementById('modalHighScore').innerText = String(highScore).padStart(5, '0');
+
+                    const gameOverTitle = document.getElementById('gameOverTitle');
+                    const highScoreMsg = document.getElementById('highScoreMsg');
+
+                    if (finalScoreNum > highScore) {
+                        highScore = finalScoreNum;
+                        localStorage.setItem('dinoRunHighScore', highScore);
+                        document.getElementById('highScore').innerText = String(highScore).padStart(5, '0');
+                        document.getElementById('modalHighScore').innerText = String(highScore).padStart(5, '0');
+                        gameOverTitle.textContent = '🎉 AMAZING! 🎉';
+                        highScoreMsg.style.display = 'block';
+                    } else {
+                        gameOverTitle.textContent = 'GAME OVER';
+                        highScoreMsg.style.display = 'none';
+                    }
+
                     const finalScoreEl = document.getElementById('finalScore');
                     finalScoreEl.style.animation = 'none';
                     finalScoreEl.offsetHeight; /* trigger reflow */
@@ -173,10 +268,11 @@
         }
 
         document.addEventListener('keydown', handleInput);
-        document.addEventListener('touchstart', handleInput, {passive: false});
+        document.addEventListener('touchstart', handleInput, { passive: false });
         document.addEventListener('mousedown', handleInput);
 
         resetGame();
     </script>
 </body>
+
 </html>

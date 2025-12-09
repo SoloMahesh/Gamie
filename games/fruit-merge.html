@@ -1,26 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fruit Merge</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #ffeaa7; font-family: 'Segoe UI', sans-serif; touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        canvas { border: 2px solid #555; background: #fff; border-bottom: none; }
-        #container { position: relative; width: 100%; max-width: 400px; height: 100%; max-height: 600px; border: 2px solid #555; border-top: none; background: rgba(255,255,255,0.5); }
-        #score { position: absolute; top: 10px; left: 10px; font-size: 1.5rem; color: #333; font-weight: bold; pointer-events: none; }
-        #nextFruit { position: absolute; top: 10px; right: 10px; width: 50px; height: 50px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; background: white; border-radius: 5px; }
-        #gameOver { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        button { padding: 10px 20px; font-size: 1.2rem; margin-top: 10px; cursor: pointer; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #ffeaa7;
+            font-family: 'Segoe UI', sans-serif;
+            touch-action: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        canvas {
+            border: 2px solid #555;
+            background: #fff;
+            border-bottom: none;
+        }
+
+        #container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            max-height: 600px;
+            border: 2px solid #555;
+            border-top: none;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 1.5rem;
+            color: #333;
+            font-weight: bold;
+            pointer-events: none;
+            text-align: left;
+            line-height: 1.4;
+        }
+
+        #nextFruit {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 50px;
+            height: 50px;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 5px;
+        }
+
+        #gameOver {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            border-radius: 10px;
+        }
+
+        #gameOver h1 {
+            margin: 0 0 10px;
+            font-size: 2.5rem;
+        }
+
+        #gameOver p {
+            margin: 5px 0;
+            font-size: 1.2rem;
+        }
+
+        .high-score-note {
+            color: #ffd700;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.3rem;
+            margin-top: 20px;
+            cursor: pointer;
+            background: #e67e22;
+            border: none;
+            color: white;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
+
 <body>
-    <div id="score">Score: 0</div>
+    <div id="score">Score: 0<br><span style="font-size: 0.8em; color: #555;">Best: 0</span></div>
     <div id="nextFruit"></div>
     <canvas id="gameCanvas"></canvas>
 
     <div id="gameOver">
-        <h1>Game Over</h1>
+        <h1 id="gameOverText">Game Over!</h1>
+        <p id="finalScore">Score: 0</p>
+        <p id="highScoreNote" class="high-score-note" style="display:none">🏆 NEW HIGH SCORE! 🏆</p>
         <button onclick="resetGame()">Try Again</button>
     </div>
 
@@ -47,13 +151,15 @@
         let currentFruitType = 0;
         let nextFruitType = 0;
         let score = 0;
+        let highScore = parseInt(localStorage.getItem('fruitMergeHighScore')) || 0;
         let gameActive = true;
         let dropX = 0;
+        let overflowTimer = 0;
 
         // Constants
         const gravity = 0.5;
-        const friction = 0.98;
-        const bounce = 0.3;
+        const friction = 0.99;  // Improved for smoother settling
+        const bounce = 0.2;     // Reduced for less bouncing
 
         function resize() {
             width = Math.min(window.innerWidth, 400);
@@ -76,11 +182,29 @@
         }
 
         function updateUI() {
-            document.getElementById('score').innerText = 'Score: ' + score;
+            document.getElementById('score').innerHTML = `Score: ${score}<br><span style="font-size: 0.8em; color: #555;">Best: ${highScore}</span>`;
             const nextEl = document.getElementById('nextFruit');
             nextEl.style.backgroundColor = fruitTypes[nextFruitType].color;
             nextEl.style.borderRadius = '50%';
             nextEl.style.transform = `scale(${fruitTypes[nextFruitType].radius / 40})`;
+        }
+
+        function gameOver() {
+            gameActive = false;
+            const gameOverDiv = document.getElementById('gameOver');
+            const highScoreNote = document.getElementById('highScoreNote');
+
+            // Update high score
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('fruitMergeHighScore', highScore);
+                highScoreNote.style.display = 'block';
+            } else {
+                highScoreNote.style.display = 'none';
+            }
+
+            document.getElementById('finalScore').innerText = `Final Score: ${score}`;
+            gameOverDiv.style.display = 'flex';
         }
 
         function spawnFruit(x) {
@@ -112,7 +236,7 @@
                     if (f1.type === f2.type && !f1.merged && !f2.merged) {
                         const dx = f2.x - f1.x;
                         const dy = f2.y - f1.y;
-                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        const dist = Math.sqrt(dx * dx + dy * dy);
 
                         if (dist < f1.radius + f2.radius) {
                             // Merge!
@@ -148,15 +272,21 @@
             if (!gameActive) return;
 
             // Physics Loop
-            // Sub-steps for stability
-            const subSteps = 8;
-            for(let step=0; step<subSteps; step++) {
+            // Sub-steps for stability (increased for smoother physics)
+            const subSteps = 16;
+            for (let step = 0; step < subSteps; step++) {
                 fruits.forEach(f => {
                     f.vy += gravity / subSteps;
                     f.x += f.vx / subSteps;
                     f.y += f.vy / subSteps;
                     f.vx *= friction;
                     f.vy *= friction;
+
+                    // Rest detection for smoother settling
+                    if (Math.abs(f.vx) < 0.05 && Math.abs(f.vy) < 0.05) {
+                        f.vx *= 0.9;
+                        f.vy *= 0.9;
+                    }
 
                     // Floor
                     if (f.y + f.radius > height) {
@@ -182,7 +312,7 @@
 
                         const dx = f2.x - f1.x;
                         const dy = f2.y - f1.y;
-                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        const dist = Math.sqrt(dx * dx + dy * dy);
                         const minDist = f1.radius + f2.radius;
 
                         if (dist < minDist) {
@@ -214,19 +344,19 @@
                             const velAlongNormal = rvx * nx + rvy * ny;
 
                             // Do not resolve if moving away
-                            if(velAlongNormal > 0) continue;
+                            if (velAlongNormal > 0) continue;
 
                             const restitution = 0.2;
                             let jImp = -(1 + restitution) * velAlongNormal;
-                            jImp /= (1/f1.radius + 1/f2.radius); // Inverse mass approx
+                            jImp /= (1 / f1.radius + 1 / f2.radius); // Inverse mass approx
 
                             const impulseX = jImp * nx;
                             const impulseY = jImp * ny;
 
-                            f1.vx -= impulseX * (1/f1.radius);
-                            f1.vy -= impulseY * (1/f1.radius);
-                            f2.vx += impulseX * (1/f2.radius);
-                            f2.vy += impulseY * (1/f2.radius);
+                            f1.vx -= impulseX * (1 / f1.radius);
+                            f1.vy -= impulseY * (1 / f1.radius);
+                            f2.vx += impulseX * (1 / f2.radius);
+                            f2.vy += impulseY * (1 / f2.radius);
                         }
                     }
                 }
@@ -234,24 +364,22 @@
 
             checkMerge();
 
-            // Check Game Over (fruit stays above line)
-            const limitY = 100;
-            // Only if stable?
-            // Simple check: if any fruit center is above limitY for some time
-            fruits.forEach(f => {
-                if (f.y < limitY && f.vy > -0.1 && f.vy < 0.1) {
-                    // Potential game over
-                    // Actually, give it a loose condition
-                }
-            });
-            // Let's enforce top wall as ceiling but if too full -> game over?
-            // "Stack overflow"
+            // Check Game Over - fruits piling above top
             let overflow = false;
             fruits.forEach(f => {
-                if(f.y - f.radius < 0) overflow = true;
+                // Check if fruit is above screen and nearly at rest
+                if (f.y - f.radius < 0 && Math.abs(f.vy) < 0.5) {
+                    overflow = true;
+                }
             });
-            if (overflow && fruits.length > 2) {
-                // gameOver(); // It's annoying if immediate. Let's skip for now or make a timer.
+
+            if (overflow && fruits.length > 3) {
+                overflowTimer++;
+                if (overflowTimer > 60) { // ~1 second at 60fps
+                    gameOver();
+                }
+            } else {
+                overflowTimer = 0;
             }
         }
 
@@ -277,7 +405,7 @@
                 // Shine
                 ctx.fillStyle = "rgba(255,255,255,0.3)";
                 ctx.beginPath();
-                ctx.arc(f.x - f.radius/3, f.y - f.radius/3, f.radius/4, 0, Math.PI * 2);
+                ctx.arc(f.x - f.radius / 3, f.y - f.radius / 3, f.radius / 4, 0, Math.PI * 2);
                 ctx.fill();
             });
 
@@ -316,24 +444,29 @@
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
             dropX = Math.max(0, Math.min(width, e.touches[0].clientX - rect.left));
-        }, {passive: false});
+        }, { passive: false });
 
         function doDrop() {
-            if(gameActive) spawnFruit(dropX);
+            if (gameActive) spawnFruit(dropX);
         }
 
         canvas.addEventListener('click', doDrop);
-        // canvas.addEventListener('touchend', doDrop); // Double trigger issue with mouse emulation?
-        // Better:
-        let touchStart = 0;
-        canvas.addEventListener('touchstart', e => touchStart = Date.now(), {passive: false});
+
+        // Simplified touch handling
+        let canDrop = true;
         canvas.addEventListener('touchend', e => {
-            if (Date.now() - touchStart < 500) doDrop();
-        }, {passive: false});
+            e.preventDefault();
+            if (canDrop && gameActive) {
+                spawnFruit(dropX);
+                canDrop = false;
+                setTimeout(() => canDrop = true, 200);
+            }
+        }, { passive: false });
 
         resetGame();
         loop();
 
     </script>
 </body>
+
 </html>
