@@ -1,0 +1,122 @@
+{
+  "whack-a-mole.html": {
+    "game": "whack-a-mole.html",
+    "timestamp": "2025-12-09T16:03:45.942431",
+    "tests": {
+      "page_load": "PASS",
+      "visual_elements": "PASS",
+      "start_game": "PASS",
+      "score_tracking": "PASS",
+      "timer": "PASS",
+      "interaction": "PASS",
+      "keyboard": "PASS",
+      "mobile_responsive": "PASS",
+      "game_over_modal": "PASS",
+      "restart_button": "PASS"
+    }
+  },
+  "classic-snake.html": {
+    "game": "classic-snake.html",
+    "timestamp": "2025-12-09T16:03:51.167953",
+    "tests": {
+      "page_load": "PASS",
+      "visual_elements": "PASS",
+      "start_game": "INFO: Page.wait_for_timeout: Target page, context or browser has been closed",
+      "overall": "CRITICAL ERROR: Page.wait_for_timeout: Target page, context or browser has been closed"
+    }
+  },
+  "flappy-bird.html": {
+    "game": "flappy-bird.html",
+    "timestamp": "2025-12-09T16:03:52.942490",
+    "tests": {
+      "page_load": "PASS",
+      "visual_elements": "FAIL: Page.wait_for_timeout: Target page, context or browser has been closed",
+      "start_game": "INFO: Locator.count: Target page, context or browser has been closed",
+      "overall": "CRITICAL ERROR: Page.wait_for_timeout: Target page, context or browser has been closed"
+    }
+  },
+  "dino-run.html": {
+    "game": "dino-run.html",
+    "timestamp": "2025-12-09T16:03:53.783263",
+    "tests": {
+      "page_load": "PASS",
+      "visual_elements": "FAIL: Page.wait_for_timeout: Target page, context or browser has been closed",
+      "start_game": "INFO: Locator.count: Target page, context or browser has been closed",
+      "overall": "CRITICAL ERROR: Page.wait_for_timeout: Target page, context or browser has been closed"
+    }
+  },
+  "space-jump.html": {
+    "game": "space-jump.html",
+    "timestamp": "2025-12-09T16:03:54.498516",
+    "tests": {
+      "page_load": "PASS",
+      "visual_elements": "FAIL: Page.wait_for_timeout: Target page, context or browser has been closed",
+      "start_game": "INFO: Locator.count: Target page, context or browser has been closed",
+      "overall": "CRITICAL ERROR: Page.wait_for_timeout: Target page, context or browser has been closed"
+    }
+  },
+  "bubble-shooter.html": {
+    "game": "bubble-shooter.html",
+    "timestamp": "2025-12-09T16:03:55.423036",
+    "tests": {
+      "page_load": "PASS",
+      "visual_elements": "FAIL: Page.wait_for_timeout: Target page, context or browser has been closed",
+      "start_game": "INFO: Locator.count: Target page, context or browser has been closed",
+      "overall": "CRITICAL ERROR: Page.wait_for_timeout: Target page, context or browser has been closed"
+    }
+  },
+  "word-guess.html": {
+    "game": "word-guess.html",
+    "timestamp": "2025-12-09T16:03:56.304509",
+    "tests": {
+      "page_load": "PASS",
+      "visual_elements": "FAIL: Locator.count: Target page, context or browser has been closed",
+      "start_game": "INFO: Locator.count: Target page, context or browser has been closed",
+      "overall": "CRITICAL ERROR: Page.wait_for_timeout: Target page, context or browser has been closed"
+    }
+  },
+  "memory-match.html": {
+    "game": "memory-match.html",
+    "timestamp": "2025-12-09T16:03:57.351341",
+    "tests": {
+      "page_load": "PASS",
+      "visual_elements": "FAIL: Page.wait_for_timeout: Target page, context or browser has been closed",
+      "start_game": "INFO: Locator.count: Target page, context or browser has been closed",
+      "overall": "CRITICAL ERROR: Page.wait_for_timeout: Target page, context or browser has been closed"
+    }
+  },
+  "tetris.html": {
+    "game": "tetris.html",
+    "timestamp": "2025-12-09T16:03:58.043124",
+    "tests": {
+      "page_load": "PASS",
+      "visual_elements": "FAIL: Page.wait_for_timeout: Target page, context or browser has been closed",
+      "start_game": "INFO: Locator.count: Target page, context or browser has been closed",
+      "overall": "CRITICAL ERROR: Page.wait_for_timeout: Target page, context or browser has been closed"
+    }
+  },
+  "2048-puzzle.html": {
+    "game": "2048-puzzle.html",
+    "timestamp": "2025-12-09T16:03:59.004713",
+    "tests": {
+      "page_load": "PASS",
+      "visual_elements": "PASS",
+      "start_game": "PASS (auto-start)",
+      "overall": "CRITICAL ERROR: Page.wait_for_timeout: Target page, context or browser has been closed"
+    }
+  },
+  "food-catcher.html": {
+    "game": "food-catcher.html",
+    "timestamp": "2025-12-09T16:04:00.064410",
+    "tests": {
+      "page_load": "FAIL: Page.goto: Target page, context or browser has been closed\nCall log:\n  - navigating to \"file:///Users/maheshpalaparthi/Documents/Testing/games/food-catcher.html\", waiting until \"load\"\n"
+    }
+  },
+  "pong.html": {
+    "game": "pong.html",
+    "timestamp": "2025-12-09T16:04:00.787769",
+    "tests": {
+      "page_load": "FAIL: Page.goto: Target page, context or browser has been closed\nCall log:\n  - navigating to \"file:///Users/maheshpalaparthi/Documents/Testing/games/pong.html\", waiting until \"load\"\n"
+    }
+  }
+}

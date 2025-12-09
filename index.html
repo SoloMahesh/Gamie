@@ -34,6 +34,99 @@
             },
         }
     </script>
+    <style>
+        .favorite-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .favorite-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
+        }
+
+        .favorite-btn svg {
+            fill: #fff;
+            width: 18px;
+            height: 18px;
+            transition: fill 0.3s ease;
+        }
+
+        .favorite-btn.active svg {
+            fill: #ff4757;
+            stroke: #ff4757;
+        }
+
+        /* Search Suggestions */
+        .search-container {
+            position: relative;
+            width: 100%;
+        }
+
+        #search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-color, #fff);
+            /* Fallback */
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 50;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .dark #search-suggestions {
+            background: #2d1b3e;
+            /* Dark theme bg match */
+            border: 1px solid #362348;
+        }
+
+        .suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .suggestion-item {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .suggestion-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .suggestion-thumb {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
 </head>
 
 <body class="font-display">
@@ -82,7 +175,8 @@
                                     </div>
                                     <input id="game-search"
                                         class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-800 dark:text-white focus:outline-0 focus:ring-0 border-none bg-black/5 dark:bg-[#362348] focus:border-none h-full placeholder:text-gray-400 dark:placeholder:text-[#ad92c9] px-2 md:px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
-                                        placeholder="Search" value="" />
+                                        placeholder="Search" value="" autocomplete="off" />
+                                    <div id="search-suggestions"></div>
                                 </div>
                             </label>
                             <!-- <div class="hidden sm:flex gap-2">
@@ -98,7 +192,7 @@
                         </div>
                     </header>
                     <main>
-                        <section class="mt-5">
+                        <section class="mt-5" id="hero-section">
                             <div class="@container">
                                 <div class="@[480px]:p-4">
                                     <div class="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4"
@@ -262,6 +356,12 @@
                                     data-alt="Retro pong arcade game screen" href="games/pong.html"
                                     style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("assets/logos/Pong.jpg");'>
                                     <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Pong</p>
+                                </a>
+                                <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
+                                    data-alt="Classic retro Pong game" href="games/pong-classic.html"
+                                    style='background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%), url("assets/logos/Pong.jpg");'>
+                                    <p class="text-white text-base font-bold leading-tight w-4/5 line-clamp-3">Pong
+                                        Classic</p>
                                 </a>
                                 <a class="game-card bg-cover bg-center flex flex-col gap-3 rounded-xl justify-end p-4 aspect-[3/4] hover:scale-105 transition-transform duration-300"
                                     data-alt="Rock paper scissors hand gestures" href="games/rock-paper-scissors.html"
@@ -509,19 +609,159 @@
         </div>
     </div>
     <script>
-        document.getElementById('game-search').addEventListener('input', function (e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const games = document.querySelectorAll('.game-card');
 
-            games.forEach(game => {
-                const title = game.querySelector('p').textContent.toLowerCase();
-                if (title.includes(searchTerm)) {
-                    game.style.display = 'flex';
+        // Data & State
+        const gamesGrid = document.getElementById('games-grid');
+        const gameCards = Array.from(document.querySelectorAll('.game-card'));
+        const searchInput = document.getElementById('game-search');
+        const suggestionsBox = document.getElementById('search-suggestions');
+        const heroSection = document.getElementById('hero-section');
+        let favoriteGames = JSON.parse(localStorage.getItem('favoriteGames')) || [];
+
+        // --- Initialization ---
+        function init() {
+            // 1. Inject Favorite Buttons
+            gameCards.forEach(card => {
+                const title = card.querySelector('p').textContent.trim();
+                const btn = document.createElement('button');
+                btn.className = `favorite-btn ${favoriteGames.includes(title) ? 'active' : ''}`;
+                btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+                btn.onclick = (e) => {
+                    e.preventDefault(); // Prevent link navigation
+                    toggleFavorite(title, btn);
+                };
+                card.appendChild(btn);
+            });
+
+            // 2. Sort Favorites to Top
+            sortGames();
+
+            // 3. Setup Search
+            setupSearch();
+        }
+
+        // --- Favorites Logic ---
+        function toggleFavorite(title, btn) {
+            if (favoriteGames.includes(title)) {
+                favoriteGames = favoriteGames.filter(t => t !== title);
+                btn.classList.remove('active');
+            } else {
+                favoriteGames.push(title);
+                btn.classList.add('active');
+            }
+            localStorage.setItem('favoriteGames', JSON.stringify(favoriteGames));
+            sortGames();
+        }
+
+        function sortGames() {
+            // Re-append cards in order: Favorites first, then alphabetical (or original order)
+            // We'll keep original relative order for non-favs to keep it simple
+
+            const favorites = [];
+            const others = [];
+
+            gameCards.forEach(card => {
+                const title = card.querySelector('p').textContent.trim();
+                if (favoriteGames.includes(title)) {
+                    favorites.push(card);
                 } else {
-                    game.style.display = 'none';
+                    others.push(card);
                 }
             });
-        });
+
+            // Clear grid
+            gamesGrid.innerHTML = '';
+
+            // Append Favorites
+            favorites.forEach(card => gamesGrid.appendChild(card));
+            // Append Others
+            others.forEach(card => gamesGrid.appendChild(card));
+        }
+
+        // --- Search Logic & Suggestions ---
+        function setupSearch() {
+            searchInput.addEventListener('input', function (e) {
+                const searchTerm = e.target.value.toLowerCase();
+
+                // Toggle Hero Section
+                if (searchTerm.length > 0) {
+                    heroSection.style.display = 'none';
+                } else {
+                    heroSection.style.display = 'block';
+                }
+
+                // Filter Grid
+                gameCards.forEach(card => {
+                    const title = card.querySelector('p').textContent.toLowerCase();
+                    if (title.includes(searchTerm)) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                // Show Suggestions
+                showSuggestions(searchTerm);
+            });
+
+            // Hide suggestions on click outside
+            document.addEventListener('click', function (e) {
+                if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                    suggestionsBox.style.display = 'none';
+                }
+            });
+        }
+
+        function showSuggestions(term) {
+            if (term.length < 1) {
+                suggestionsBox.style.display = 'none';
+                return;
+            }
+
+            const matches = gameCards
+                .map(card => {
+                    return {
+                        title: card.querySelector('p').textContent.trim(),
+                        bg: card.style.backgroundImage,
+                        element: card
+                    };
+                })
+                .filter(item => item.title.toLowerCase().includes(term));
+
+            if (matches.length > 0) {
+                suggestionsBox.innerHTML = '';
+                // Limit to 6 suggestions as requested
+                matches.slice(0, 6).forEach(match => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+
+                    // Extract URL from style for thumb
+                    let bgUrl = '';
+                    const urlMatch = match.bg.match(/url\("?(.+?)"?\)/);
+                    if (urlMatch) bgUrl = urlMatch[1];
+
+                    div.innerHTML = `
+                        <div class="suggestion-thumb" style="background-image: url('${bgUrl}')"></div>
+                        <span>${match.title}</span>
+                    `;
+
+                    div.onclick = () => {
+                        searchInput.value = match.title;
+                        suggestionsBox.style.display = 'none';
+                        // Trigger filter
+                        searchInput.dispatchEvent(new Event('input'));
+                        match.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    };
+                    suggestionsBox.appendChild(div);
+                });
+                suggestionsBox.style.display = 'block';
+            } else {
+                suggestionsBox.style.display = 'none';
+            }
+        }
+
+        // Run
+        init();
     </script>
 </body>
 
