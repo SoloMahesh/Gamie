@@ -1,29 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tetris Clone</title>
     <style>
-        body { background: #202028; color: #fff; font-family: sans-serif; font-size: 2em; text-align: center; overflow: hidden; touch-action: none; margin: 0; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        canvas { border: 2px solid #fff; box-shadow: 0 0 20px rgba(0,0,0,0.5); background-color: #000; }
-        #score { position: absolute; top: 10px; right: 20px; font-size: 1.5rem; }
-        .controls { position: absolute; bottom: 20px; width: 100%; display: flex; justify-content: center; gap: 20px; pointer-events: none; }
-        .btn { width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; justify-content: center; align-items: center; pointer-events: auto; user-select: none; border: 2px solid rgba(255,255,255,0.5); font-size: 1.5rem; }
-        .btn:active { background: rgba(255,255,255,0.4); }
+        body {
+            background: #202028;
+            color: #fff;
+            font-family: sans-serif;
+            font-size: 2em;
+            text-align: center;
+            overflow: hidden;
+            touch-action: none;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
 
-        #gameOver { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        #gameOver button { padding: 15px 30px; font-size: 1.5rem; background: #e74c3c; border: none; color: white; border-radius: 5px; cursor: pointer; margin-top: 20px; pointer-events: auto; }
+        canvas {
+            border: 2px solid #fff;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            background-color: #000;
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 1.5rem;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            pointer-events: none;
+        }
+
+        .btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            user-select: none;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            font-size: 1.5rem;
+        }
+
+        .btn:active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        #gameOver {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        #gameOver button {
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            background: #e74c3c;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            pointer-events: auto;
+        }
     </style>
 </head>
+
 <body>
-    <div id="score">0</div>
+    <div id="score">Score: 0 | Best: <span id="highScore" style="color: #FFE138;">0</span></div>
     <canvas id="tetris" width="240" height="400"></canvas>
 
     <div id="gameOver">
-        <h1>GAME OVER</h1>
+        <h1 id="gameOverTitle">GAME OVER</h1>
+        <p id="highScoreMsg" style="color: #FFE138; font-size: 1.2rem; display: none;">🏆 NEW HIGH SCORE! 🏆</p>
         <p>Score: <span id="finalScore">0</span></p>
-        <button onclick="playerReset()">Try Again</button>
+        <p style="color: #888; font-size: 0.8rem;">Best: <span id="modalHighScore">0</span></p>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="closeGameOver()">Close</button>
+            <button onclick="restartGame()" style="background: #3877FF;">Play Again</button>
+        </div>
     </div>
 
     <div class="controls">
@@ -63,7 +143,7 @@
                 for (let x = 0; x < m[y].length; ++x) {
                     if (m[y][x] !== 0 &&
                         (arena[y + o.y] &&
-                        arena[y + o.y][x + o.x]) !== 0) {
+                            arena[y + o.y][x + o.x]) !== 0) {
                         return true;
                     }
                 }
@@ -143,7 +223,7 @@
         function draw() {
             context.fillStyle = '#000';
             context.fillRect(0, 0, canvas.width, canvas.height);
-            drawMatrix(arena, {x: 0, y: 0});
+            drawMatrix(arena, { x: 0, y: 0 });
             drawMatrix(player.matrix, player.pos);
         }
 
@@ -164,9 +244,9 @@
                         matrix[x][y],
                         matrix[y][x],
                     ] = [
-                        matrix[y][x],
-                        matrix[x][y],
-                    ];
+                            matrix[y][x],
+                            matrix[x][y],
+                        ];
                 }
             }
             if (dir > 0) {
@@ -200,15 +280,11 @@
             player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
             player.pos.y = 0;
             player.pos.x = (arena[0].length / 2 | 0) -
-                           (player.matrix[0].length / 2 | 0);
+                (player.matrix[0].length / 2 | 0);
 
             if (collide(arena, player)) {
                 // Game Over
-                document.getElementById('finalScore').innerText = player.score;
-                document.getElementById('gameOver').style.display = 'flex';
-                arena.forEach(row => row.fill(0));
-                player.score = 0;
-                updateScore();
+                showGameOver();
             } else {
                 document.getElementById('gameOver').style.display = 'none';
             }
@@ -247,7 +323,42 @@
         }
 
         function updateScore() {
-            document.getElementById('score').innerText = player.score;
+            document.getElementById('score').innerText = 'Score: ' + player.score + ' | Best: ' + highScore;
+        }
+
+        function showGameOver() {
+            const finalScore = player.score;
+            document.getElementById('finalScore').innerText = finalScore;
+            document.getElementById('modalHighScore').innerText = highScore;
+
+            const gameOverTitle = document.getElementById('gameOverTitle');
+            const highScoreMsg = document.getElementById('highScoreMsg');
+
+            if (finalScore > highScore) {
+                highScore = finalScore;
+                localStorage.setItem('tetrisHighScore', highScore);
+                document.getElementById('highScore').innerText = highScore;
+                document.getElementById('modalHighScore').innerText = highScore;
+                gameOverTitle.textContent = '🎉 AMAZING! 🎉';
+                highScoreMsg.style.display = 'block';
+            } else {
+                gameOverTitle.textContent = 'GAME OVER';
+                highScoreMsg.style.display = 'none';
+            }
+
+            document.getElementById('gameOver').style.display = 'flex';
+        }
+
+        function closeGameOver() {
+            document.getElementById('gameOver').style.display = 'none';
+        }
+
+        function restartGame() {
+            arena.forEach(row => row.fill(0));
+            player.score = 0;
+            updateScore();
+            document.getElementById('gameOver').style.display = 'none';
+            playerReset();
         }
 
         const colors = [
@@ -263,8 +374,11 @@
 
         const arena = createMatrix(12, 20);
 
+        let highScore = localStorage.getItem('tetrisHighScore') || 0;
+        document.getElementById('highScore').innerText = highScore;
+
         const player = {
-            pos: {x: 0, y: 0},
+            pos: { x: 0, y: 0 },
             matrix: null,
             score: 0,
         };
@@ -294,4 +408,5 @@
         update();
     </script>
 </body>
+
 </html>

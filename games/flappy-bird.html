@@ -1,31 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flappy Bird Clone</title>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background: #70c5ce; font-family: 'Segoe UI', sans-serif; touch-action: none; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        canvas { display: block; border: 2px solid #333; box-shadow: 0 0 20px rgba(0,0,0,0.2); max-width: 100%; max-height: 100%; }
-        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: none; }
-        #startMessage { font-size: 24px; color: white; text-shadow: 2px 2px #333; text-align: center; }
-        #score { position: absolute; top: 10%; font-size: 3rem; color: white; text-shadow: 2px 2px #333; font-weight: bold; pointer-events: none; z-index: 10; }
-        .game-over { background: rgba(0,0,0,0.8); pointer-events: auto; }
-        button { pointer-events: auto; padding: 15px 30px; font-size: 1.5rem; background: #e67e22; color: white; border: none; border-radius: 10px; cursor: pointer; margin-top: 20px; }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #70c5ce;
+            font-family: 'Segoe UI', sans-serif;
+            touch-action: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        canvas {
+            display: block;
+            border: 2px solid #333;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        #startMessage {
+            font-size: 24px;
+            color: white;
+            text-shadow: 2px 2px #333;
+            text-align: center;
+        }
+
+        #score {
+            position: absolute;
+            top: 10%;
+            font-size: 3rem;
+            color: white;
+            text-shadow: 2px 2px #333;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .game-over {
+            background: rgba(0, 0, 0, 0.8);
+            pointer-events: auto;
+        }
+
+        button {
+            pointer-events: auto;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            background: #e67e22;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
     </style>
 </head>
+
 <body>
     <div id="score">0</div>
+    <div
+        style="position: absolute; top: 15%; right: 20px; font-size: 1.2rem; color: #FFE138; text-shadow: 2px 2px #333; font-weight: bold; pointer-events: none; z-index: 10;">
+        Best: <span id="bestScore">0</span></div>
     <canvas id="canvas"></canvas>
 
     <div id="startScreen" class="screen">
-        <div id="startMessage">Tap or Space to Flap</div>
+        <h2 style="color: white; font-size: 2.5rem; margin-bottom: 20px;">Select Difficulty</h2>
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <button onclick="startWithDifficulty('easy')"
+                style="background: #2ecc71; font-size: 1.8rem; padding: 20px 40px;">😊 EASY</button>
+            <button onclick="startWithDifficulty('medium')"
+                style="background: #f39c12; font-size: 1.8rem; padding: 20px 40px;">😐 MEDIUM</button>
+            <button onclick="startWithDifficulty('hard')"
+                style="background: #e74c3c; font-size: 1.8rem; padding: 20px 40px;">😈 HARD</button>
+        </div>
+        <p style="color: #ccc; margin-top: 20px; font-size: 0.9rem;">Tap or Space to Flap</p>
     </div>
 
     <div id="gameOverScreen" class="screen game-over" style="display: none;">
-        <h1 style="color: white; font-size: 3rem; margin-bottom: 0;">Game Over</h1>
+        <h1 id="gameOverTitle" style="color: white; font-size: 3rem; margin-bottom: 0;">Game Over</h1>
+        <p id="highScoreMsg" style="color: #FFE138; font-size: 1.5rem; display: none;">🏆 NEW BEST! 🏆</p>
         <p style="color: white; font-size: 1.5rem;">Score: <span id="finalScore">0</span></p>
-        <button onclick="resetGame()">Try Again</button>
+        <p style="color: #ccc; font-size: 1rem;">Best: <span id="modalBest">0</span></p>
+        <button onclick="resetGame()">Play Again</button>
     </div>
 
     <script>
@@ -37,6 +114,14 @@
         const DEGREE = Math.PI / 180;
 
         // Load assets (using generated graphics for simplicity)
+        // Difficulty settings (current = Hard)
+        let difficulty = 'medium';
+        const difficultySettings = {
+            easy: { gravity: 0.10, jump: 4.5, gap: 160, speed: 1.0 },      // Very forgiving
+            medium: { gravity: 0.13, jump: 4.0, gap: 140, speed: 1.3 },   // Moderate
+            hard: { gravity: 0.15, jump: 3.6, gap: 120, speed: 1.5 }      // Current difficulty
+        };
+
         const bird = {
             x: 50,
             y: 150,
@@ -45,11 +130,11 @@
             radius: 12,
             frame: 0,
             velocity: 0,
-            gravity: 0.15,  /* Reduced gravity */
-            jump: 3.6,      /* Reduced jump */
+            gravity: 0.15,
+            jump: 3.6,
             rotation: 0,
 
-            draw: function() {
+            draw: function () {
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.rotation);
@@ -83,39 +168,38 @@
                 // Wing
                 ctx.fillStyle = "#f39c12";
                 ctx.beginPath();
-                ctx.ellipse(-5, 5, 8, 5, 0, 0, Math.PI*2);
+                ctx.ellipse(-5, 5, 8, 5, 0, 0, Math.PI * 2);
                 ctx.fill();
 
                 ctx.restore();
             },
 
-            flap: function() {
+            flap: function () {
                 this.velocity = -this.jump;
             },
 
-            update: function() {
+            update: function () {
                 // If game state is get ready, bird floats slowly
-                if(state.current == state.getReady) {
+                if (state.current == state.getReady) {
                     this.y = 150; // reset
                     this.rotation = 0 * DEGREE;
                 } else {
                     this.velocity += this.gravity;
                     this.y += this.velocity;
 
-                    if(this.y + this.h/2 >= canvas.height - fg.h) {
-                        this.y = canvas.height - fg.h - this.h/2;
-                        if(state.current == state.game) {
+                    if (this.y + this.h / 2 >= canvas.height - fg.h) {
+                        this.y = canvas.height - fg.h - this.h / 2;
+                        if (state.current == state.game) {
                             state.current = state.over;
-                            document.getElementById('gameOverScreen').style.display = 'flex';
-                            document.getElementById('finalScore').innerText = score.value;
+                            showGameOver();
                         }
                     }
 
-                    if(this.velocity < this.jump) {
+                    if (this.velocity < this.jump) {
                         this.rotation = -25 * DEGREE;
                     } else {
                         this.rotation = 90 * DEGREE;
-                        if(this.rotation > 90 * DEGREE) this.rotation = 90 * DEGREE;
+                        if (this.rotation > 90 * DEGREE) this.rotation = 90 * DEGREE;
                     }
                 }
             }
@@ -123,7 +207,7 @@
 
         const fg = {
             h: 112,
-            draw: function() {
+            draw: function () {
                 ctx.fillStyle = "#ded895";
                 ctx.fillRect(0, canvas.height - this.h, canvas.width, this.h);
                 ctx.fillStyle = "#73bf2e";
@@ -135,11 +219,11 @@
             position: [],
             w: 52,
             h: 400,
-            gap: 120, // Increased gap for better playability
-            dx: 1.5,  /* Reduced speed */
+            gap: 120,
+            dx: 1.5,
 
-            draw: function() {
-                for(let i = 0; i < this.position.length; i++) {
+            draw: function () {
+                for (let i = 0; i < this.position.length; i++) {
                     let p = this.position[i];
                     let topY = p.y;
                     let bottomY = p.y + this.h + this.gap;
@@ -156,10 +240,10 @@
                 }
             },
 
-            update: function() {
-                if(state.current !== state.game) return;
+            update: function () {
+                if (state.current !== state.game) return;
 
-                if(frames % 120 == 0) { // Every 2 seconds approx
+                if (frames % 120 == 0) { // Every 2 seconds approx
                     this.position.push({
                         x: canvas.width,
                         y: Math.random() * (canvas.height - fg.h - this.gap - 100) - (this.h - 50)
@@ -168,21 +252,21 @@
                         // Pipe height is 400.
                         // y ranges from -200 to -350 approx?
                     });
-                     // Better random y:
-                     // Max top pipe y = 0
-                     // Min top pipe y = canvas.height - fg.h - this.gap - this.h
-                     const minY = -this.h + 50;
-                     const maxY = canvas.height - fg.h - this.gap - 50 - this.h;
-                     // Overwrite push
-                     this.position[this.position.length-1].y = Math.floor(Math.random() * (maxY - minY + 1) + minY);
+                    // Better random y:
+                    // Max top pipe y = 0
+                    // Min top pipe y = canvas.height - fg.h - this.gap - this.h
+                    const minY = -this.h + 50;
+                    const maxY = canvas.height - fg.h - this.gap - 50 - this.h;
+                    // Overwrite push
+                    this.position[this.position.length - 1].y = Math.floor(Math.random() * (maxY - minY + 1) + minY);
                 }
 
-                for(let i = 0; i < this.position.length; i++) {
+                for (let i = 0; i < this.position.length; i++) {
                     let p = this.position[i];
                     p.x -= this.dx;
 
                     // Remove pipes
-                    if(p.x + this.w <= 0) {
+                    if (p.x + this.w <= 0) {
                         this.position.shift();
                         score.value += 1;
                         document.getElementById('score').innerText = score.value;
@@ -199,25 +283,25 @@
                     let pipeTopBottom = p.y + this.h;
                     let pipeBottomTop = p.y + this.h + this.gap;
 
-                    if(birdRight > p.x && birdLeft < p.x + this.w) {
-                        if(birdTop < pipeTopBottom || birdBottom > pipeBottomTop) {
+                    if (birdRight > p.x && birdLeft < p.x + this.w) {
+                        if (birdTop < pipeTopBottom || birdBottom > pipeBottomTop) {
                             state.current = state.over;
-                            document.getElementById('gameOverScreen').style.display = 'flex';
-                            document.getElementById('finalScore').innerText = score.value;
+                            showGameOver();
                         }
                     }
                 }
             },
 
-            reset: function() {
+            reset: function () {
                 this.position = [];
             }
         }
 
         const score = {
-            best: 0,
+            best: parseInt(localStorage.getItem('flappyBirdBest')) || 0,
             value: 0
         }
+        document.getElementById('bestScore').innerText = score.best;
 
         const state = {
             current: 0,
@@ -227,15 +311,32 @@
         }
 
         // Control
-        function action(e) {
-             // Prevent bubbling
-             if (e && e.target && (e.target.tagName === 'BUTTON' || e.target.closest('button'))) return;
+        function startWithDifficulty(diff) {
+            difficulty = diff;
+            const settings = difficultySettings[diff];
 
-            switch(state.current) {
+            // Apply difficulty settings
+            bird.gravity = settings.gravity;
+            bird.jump = settings.jump;
+            pipes.gap = settings.gap;
+            pipes.dx = settings.speed;
+
+            // Reset bird position
+            bird.y = 150;
+            bird.velocity = 0;
+
+            // Start game
+            state.current = state.game;
+            document.getElementById('startScreen').style.display = 'none';
+        }
+
+        function action(e) {
+            // Prevent bubbling
+            if (e && e.target && (e.target.tagName === 'BUTTON' || e.target.closest('button'))) return;
+
+            switch (state.current) {
                 case state.getReady:
-                    state.current = state.game;
-                    document.getElementById('startScreen').style.display = 'none';
-                    bird.flap();
+                    // Do nothing, wait for difficulty selection
                     break;
                 case state.game:
                     bird.flap();
@@ -244,7 +345,7 @@
         }
 
         document.addEventListener('keydown', (e) => {
-            if(e.code === 'Space' || e.key === ' ') action();
+            if (e.code === 'Space' || e.key === ' ') action();
         });
         document.addEventListener('mousedown', action);
         document.addEventListener('touchstart', (e) => {
@@ -252,10 +353,11 @@
             if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
             e.preventDefault();
             action(e);
-        }, {passive: false});
+        }, { passive: false });
 
         function resetGame() {
             bird.velocity = 0;
+            bird.y = 150;
             pipes.reset();
             score.value = 0;
             document.getElementById('score').innerText = 0;
@@ -265,12 +367,34 @@
             frames = 0;
         }
 
+        function showGameOver() {
+            document.getElementById('finalScore').innerText = score.value;
+            document.getElementById('modalBest').innerText = score.best;
+
+            const gameOverTitle = document.getElementById('gameOverTitle');
+            const highScoreMsg = document.getElementById('highScoreMsg');
+
+            if (score.value > score.best) {
+                score.best = score.value;
+                localStorage.setItem('flappyBirdBest', score.best);
+                document.getElementById('bestScore').innerText = score.best;
+                document.getElementById('modalBest').innerText = score.best;
+                gameOverTitle.textContent = '🎉 AMAZING! 🎉';
+                highScoreMsg.style.display = 'block';
+            } else {
+                gameOverTitle.textContent = 'Game Over';
+                highScoreMsg.style.display = 'none';
+            }
+
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+
         // Resize
         function resize() {
-            // Mobile portrait oriented usually
-            const maxWidth = 400; // Constrain width for gameplay consistency
+            // Larger size for desktop/laptop
+            const maxWidth = 500;  // Increased from 400
             canvas.width = Math.min(window.innerWidth, maxWidth);
-            canvas.height = Math.min(window.innerHeight, 600);
+            canvas.height = Math.min(window.innerHeight, 700);  // Increased from 600
 
             // Adjust bird X to be centered relative
             bird.x = canvas.width / 3;
@@ -304,4 +428,5 @@
 
     </script>
 </body>
+
 </html>

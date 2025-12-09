@@ -1,63 +1,245 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Word Guess</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #121213; color: white; }
-        h1 { margin-bottom: 20px; font-weight: bold; border-bottom: 1px solid #3a3a3c; padding-bottom: 10px; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #121213;
+            color: white;
+        }
 
-        .board { display: grid; grid-template-rows: repeat(6, 1fr); gap: 5px; margin-bottom: 20px; }
-        .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
-        .tile { width: 50px; height: 50px; border: 2px solid #3a3a3c; display: flex; justify-content: center; align-items: center; font-size: 2rem; font-weight: bold; text-transform: uppercase; user-select: none; }
+        h1 {
+            margin-bottom: 20px;
+            font-weight: bold;
+            border-bottom: 1px solid #3a3a3c;
+            padding-bottom: 10px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-rows: repeat(6, 1fr);
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+        }
+
+        .tile {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #3a3a3c;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            user-select: none;
+        }
 
         /* Colors */
-        .tile.correct { background: #538d4e; border-color: #538d4e; }
-        .tile.present { background: #b59f3b; border-color: #b59f3b; }
-        .tile.absent { background: #3a3a3c; border-color: #3a3a3c; }
-        .tile.filled { border-color: #565758; }
+        .tile.correct {
+            background: #538d4e;
+            border-color: #538d4e;
+        }
+
+        .tile.present {
+            background: #b59f3b;
+            border-color: #b59f3b;
+        }
+
+        .tile.absent {
+            background: #3a3a3c;
+            border-color: #3a3a3c;
+        }
+
+        .tile.filled {
+            border-color: #565758;
+        }
 
         /* Animation */
-        @keyframes pop { 50% { transform: scale(1.1); } }
-        .tile.pop { animation: pop 0.1s; }
+        @keyframes pop {
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .tile.pop {
+            animation: pop 0.1s;
+        }
 
         @keyframes flip {
-            0% { transform: rotateX(0); }
-            50% { transform: rotateX(90deg); }
-            100% { transform: rotateX(0); }
+            0% {
+                transform: rotateX(0);
+            }
+
+            50% {
+                transform: rotateX(90deg);
+            }
+
+            100% {
+                transform: rotateX(0);
+            }
         }
-        .tile.flip { animation: flip 0.5s ease; }
 
-        .keyboard { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 500px; padding: 0 10px; }
-        .key-row { display: flex; justify-content: center; gap: 6px; }
-        .key { background: #818384; border-radius: 4px; border: none; color: white; font-weight: bold; padding: 15px 0; flex: 1; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; -webkit-tap-highlight-color: transparent; }
-        .key.large { flex: 1.5; font-size: 0.8rem; }
+        .tile.flip {
+            animation: flip 0.5s ease;
+        }
 
-        .key.correct { background: #538d4e; }
-        .key.present { background: #b59f3b; }
-        .key.absent { background: #3a3a3c; }
+        .keyboard {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            max-width: 500px;
+            padding: 0 10px;
+        }
 
-        .message { position: absolute; top: 10%; background: white; color: black; padding: 10px 20px; border-radius: 5px; font-weight: bold; opacity: 0; transition: opacity 0.5s; pointer-events: none; z-index: 10; }
-        .message.show { opacity: 1; }
+        .key-row {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .key {
+            background: #818384;
+            border-radius: 4px;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 15px 0;
+            flex: 1;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .key.large {
+            flex: 1.5;
+            font-size: 0.8rem;
+        }
+
+        .key.correct {
+            background: #538d4e;
+        }
+
+        .key.present {
+            background: #b59f3b;
+        }
+
+        .key.absent {
+            background: #3a3a3c;
+        }
+
+        .message {
+            position: absolute;
+            top: 10%;
+            background: white;
+            color: black;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .message.show {
+            opacity: 1;
+        }
 
         /* Modal Overlay */
-        .modal { display: none; position: fixed; z-index: 20; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
-        .modal.show { display: flex; opacity: 1; }
-        .modal-content { background-color: #121213; border: 1px solid #3a3a3c; padding: 30px; border-radius: 10px; text-align: center; color: white; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); animation: pop 0.3s ease-out; }
-        .modal h2 { margin-top: 0; }
-        .modal p { font-size: 1.2rem; margin: 10px 0 20px; }
-        .play-again-btn { background-color: #538d4e; color: white; border: none; padding: 15px 30px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .play-again-btn:hover { background-color: #43703e; }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 20;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .modal.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background-color: #121213;
+            border: 1px solid #3a3a3c;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+            animation: pop 0.3s ease-out;
+        }
+
+        .modal h2 {
+            margin-top: 0;
+        }
+
+        .modal p {
+            font-size: 1.2rem;
+            margin: 10px 0 20px;
+        }
+
+        .play-again-btn {
+            background-color: #538d4e;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .play-again-btn:hover {
+            background-color: #43703e;
+        }
 
         @media (max-width: 350px) {
-            .tile { width: 40px; height: 40px; font-size: 1.5rem; }
-            .key { padding: 10px 0; }
+            .tile {
+                width: 40px;
+                height: 40px;
+                font-size: 1.5rem;
+            }
+
+            .key {
+                padding: 10px 0;
+            }
         }
     </style>
 </head>
+
 <body>
-    <h1>Word Guess</h1>
+    <h1>Word Guess | <span style="color: #FFD700; font-size: 0.6em;">Streak: <span id="winStreak">0</span></span></h1>
     <div class="board" id="board"></div>
     <div class="keyboard" id="keyboard"></div>
     <div class="message" id="message"></div>
@@ -66,7 +248,9 @@
     <div id="gameModal" class="modal">
         <div class="modal-content">
             <h2 id="modalTitle">Game Over</h2>
+            <p id="streakMsg" style="color: #FFD700; font-size: 1.2rem; display: none;">🔥 WIN STREAK! 🔥</p>
             <p id="modalMessage"></p>
+            <p style="color: #ccc; font-size: 0.9rem;">Best Streak: <span id="bestStreak">0</span></p>
             <button class="play-again-btn" onclick="resetGame()">Play Again</button>
         </div>
     </div>
@@ -89,6 +273,11 @@
             ["", "", "", "", ""]
         ];
         let gameOver = false;
+        let winStreak = parseInt(localStorage.getItem('wordGuessWinStreak')) || 0;
+        let bestStreak = parseInt(localStorage.getItem('wordGuessBestStreak')) || 0;
+
+        document.getElementById('winStreak').innerText = winStreak;
+        document.getElementById('bestStreak').innerText = bestStreak;
 
         const boardEl = document.getElementById('board');
         const keyboardEl = document.getElementById('keyboard');
@@ -228,12 +417,31 @@
 
             setTimeout(() => {
                 if (guessWord === targetWord) {
-                    // showMessage("Splendid!");
                     gameOver = true;
-                    showModal("Splendid!", "You found the word!");
+                    winStreak++;
+                    localStorage.setItem('wordGuessWinStreak', winStreak);
+                    document.getElementById('winStreak').innerText = winStreak;
+
+                    if (winStreak > bestStreak) {
+                        bestStreak = winStreak;
+                        localStorage.setItem('wordGuessBestStreak', bestStreak);
+                        document.getElementById('bestStreak').innerText = bestStreak;
+                    }
+
+                    const streakMsg = document.getElementById('streakMsg');
+                    if (winStreak >= 3) {
+                        streakMsg.style.display = 'block';
+                    } else {
+                        streakMsg.style.display = 'none';
+                    }
+
+                    showModal("Splendid!", `You found the word! Streak: ${winStreak}`);
                 } else if (currentGuess === MAX_GUESSES - 1) {
-                    // showMessage(targetWord);
                     gameOver = true;
+                    winStreak = 0;
+                    localStorage.setItem('wordGuessWinStreak', 0);
+                    document.getElementById('winStreak').innerText = 0;
+                    document.getElementById('streakMsg').style.display = 'none';
                     showModal("Game Over", `The word was ${targetWord}`);
                 } else {
                     currentGuess++;
@@ -296,4 +504,5 @@
         init();
     </script>
 </body>
+
 </html>
