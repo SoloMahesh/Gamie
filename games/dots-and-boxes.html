@@ -1,72 +1,452 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dots and Boxes</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #fafafa; user-select: none; }
-        h1 { margin-bottom: 20px; }
-        .game-info { display: flex; justify-content: space-between; width: 300px; font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; }
-        .p1-score { color: #e74c3c; }
-        .p2-score { color: #3498db; }
-        .active { text-decoration: underline; transform: scale(1.1); }
-
-        .grid {
-            display: grid;
-            /* 5 cols of dots + 4 cols of spaces = 9 cols total in grid definition? No. */
-            /* We draw using div borders or specific items */
-            /* Let's use SVG for cleaner lines/dots */
-            width: 300px;
-            height: 300px;
-            background: #fff;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            border-radius: 10px;
-            padding: 20px;
+        :root {
+            --p1-color: #e74c3c;
+            --p2-color: #3498db;
+            --bg: #fafafa;
+            --board-bg: #ffffff;
+            --dot-color: #333333;
+            --accent: #9b59b6;
         }
 
-        /* SVG approach is best for hit detection on lines */
-        svg { width: 100%; height: 100%; }
-        line { stroke: #eee; stroke-width: 10; stroke-linecap: round; cursor: pointer; transition: stroke 0.2s; }
-        line:hover { stroke: #ddd; }
-        line.taken-p1 { stroke: #e74c3c; }
-        line.taken-p2 { stroke: #3498db; }
+        * {
+            box-sizing: border-box;
+        }
 
-        circle { fill: #333; }
-        rect.box { fill: transparent; transition: fill 0.5s; }
-        rect.box-p1 { fill: rgba(231, 76, 60, 0.5); }
-        rect.box-p2 { fill: rgba(52, 152, 219, 0.5); }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            user-select: none;
+        }
 
-        button { margin-top: 20px; padding: 10px 20px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        h1 {
+            margin: 0 0 20px;
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Level Selection */
+        .level-selector {
+            background: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .level-selector label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            padding: 8px 32px 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            background-color: white;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%23333" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 4px center;
+            background-size: 24px;
+            cursor: pointer;
+            transition: border 0.2s;
+        }
+
+        select:hover {
+            border-color: var(--accent);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            background: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .p1-score {
+            color: var(--p1-color);
+        }
+
+        .p2-score {
+            color: var(--p2-color);
+        }
+
+        .active {
+            text-decoration: underline;
+            transform: scale(1.08);
+        }
+
+        .status-text {
+            margin-top: 4px;
+            font-size: 1rem;
+            color: white;
+            text-align: center;
+            min-height: 1.2em;
+            font-weight: 500;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .board-wrapper {
+            width: min(90vw, 500px);
+            aspect-ratio: 1 / 1;
+            background: var(--board-bg);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        line.playable {
+            stroke: #eeeeee;
+            stroke-width: 10;
+            stroke-linecap: round;
+            cursor: pointer;
+            transition: stroke 0.15s, stroke-width 0.15s;
+        }
+
+        line.playable:hover {
+            stroke: #dddddd;
+        }
+
+        line.taken-p1 {
+            stroke: var(--p1-color);
+        }
+
+        line.taken-p2 {
+            stroke: var(--p2-color);
+        }
+
+        line.preview-p1:not(.taken-p1):not(.taken-p2) {
+            stroke: rgba(231, 76, 60, 0.5);
+        }
+
+        line.preview-p2:not(.taken-p1):not(.taken-p2) {
+            stroke: rgba(52, 152, 219, 0.5);
+        }
+
+        circle {
+            fill: var(--dot-color);
+        }
+
+        rect.box {
+            fill: transparent;
+            transition: fill 0.3s ease-out;
+        }
+
+        rect.box-p1 {
+            fill: rgba(231, 76, 60, 0.35);
+        }
+
+        rect.box-p2 {
+            fill: rgba(52, 152, 219, 0.35);
+        }
+
+        .controls {
+            margin-top: 16px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: white;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            transform: scale(0.7) translateY(-20px);
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .modal-overlay.show .modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            animation: bounceIn 0.6s;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .modal h2 {
+            margin: 0 0 16px;
+            font-size: 2.2rem;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .modal-winner {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .modal-winner.p1 {
+            color: var(--p1-color);
+        }
+
+        .modal-winner.p2 {
+            color: var(--p2-color);
+        }
+
+        .modal-winner.tie {
+            color: var(--accent);
+        }
+
+        .modal-score {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .modal-btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .modal-btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .modal-btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        .modal-btn:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+            }
+            .modal h2 {
+                font-size: 1.8rem;
+            }
+            .modal-winner {
+                font-size: 1.3rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>Dots and Boxes</h1>
+    <h1>🎮 Dots and Boxes</h1>
+
+    <div class="level-selector">
+        <label for="grid-size">Grid Size:</label>
+        <select id="grid-size">
+            <option value="4" selected>4×4</option>
+            <option value="5">5×5</option>
+            <option value="6">6×6</option>
+            <option value="7">7×7</option>
+            <option value="8">8×8</option>
+            <option value="9">9×9</option>
+            <option value="10">10×10</option>
+            <option value="11">11×11</option>
+            <option value="12">12×12</option>
+            <option value="13">13×13</option>
+            <option value="14">14×14</option>
+            <option value="15">15×15</option>
+        </select>
+    </div>
+
     <div class="game-info">
         <span id="p1-score" class="p1-score active">P1: 0</span>
         <span id="p2-score" class="p2-score">P2: 0</span>
     </div>
+    <div id="status" class="status-text">Player 1's turn</div>
 
-    <div class="grid">
-        <svg id="game-svg" viewBox="0 0 400 400"></svg>
+    <div class="board-wrapper">
+        <svg id="game-svg" viewBox="0 0 400 400" aria-label="Dots and Boxes game board" role="img"></svg>
     </div>
 
-    <button onclick="initGame()">Restart</button>
+    <div class="controls">
+        <button id="restart-btn">🔄 Restart</button>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-icon" id="modal-icon">🎉</div>
+            <h2>Game Over!</h2>
+            <div class="modal-winner" id="modal-winner">Player 1 Wins!</div>
+            <div class="modal-score" id="modal-score">P1: 5 | P2: 4</div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-primary" id="modal-restart">
+                    🔄 Play Again
+                </button>
+                <button class="modal-btn modal-btn-secondary" id="modal-menu">
+                    🏠 Main Menu
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script>
         const svg = document.getElementById('game-svg');
         const p1ScoreEl = document.getElementById('p1-score');
         const p2ScoreEl = document.getElementById('p2-score');
+        const statusEl = document.getElementById('status');
+        const restartBtn = document.getElementById('restart-btn');
+        const gridSizeSelect = document.getElementById('grid-size');
+        const modal = document.getElementById('game-over-modal');
+        const modalIcon = document.getElementById('modal-icon');
+        const modalWinner = document.getElementById('modal-winner');
+        const modalScore = document.getElementById('modal-score');
+        const modalRestartBtn = document.getElementById('modal-restart');
+        const modalMenuBtn = document.getElementById('modal-menu');
 
-        const ROWS = 4;
-        const COLS = 4;
+        let ROWS = 4;
+        let COLS = 4;
         const SPACING = 100;
 
-        let lines = []; // { type: 'h'/'v', r, c, owner: 0/1/2 }
-        let boxes = []; // { r, c, owner: 0/1/2 }
+        let lines = [];
+        let boxes = [];
         let currentPlayer = 1;
         let scores = { 1: 0, 2: 0 };
         let gameActive = true;
+
+        // Event Listeners
+        restartBtn.addEventListener('click', initGame);
+        gridSizeSelect.addEventListener('change', handleGridSizeChange);
+        modalRestartBtn.addEventListener('click', () => {
+            hideModal();
+            initGame();
+        });
+        modalMenuBtn.addEventListener('click', () => {
+            hideModal();
+            initGame();
+        });
+
+        function handleGridSizeChange() {
+            const size = parseInt(gridSizeSelect.value);
+            ROWS = size;
+            COLS = size;
+            initGame();
+        }
 
         function initGame() {
             svg.innerHTML = '';
@@ -77,15 +457,15 @@
             gameActive = true;
             updateUI();
 
-            // Create Boxes (background)
+            // Create Boxes (background rectangles)
             for (let r = 0; r < ROWS - 1; r++) {
                 for (let c = 0; c < COLS - 1; c++) {
-                    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                    rect.setAttribute("x", c * SPACING + 10);
-                    rect.setAttribute("y", r * SPACING + 10);
-                    rect.setAttribute("width", SPACING - 20);
-                    rect.setAttribute("height", SPACING - 20);
-                    rect.setAttribute("class", "box");
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rect.setAttribute('x', c * SPACING + 10);
+                    rect.setAttribute('y', r * SPACING + 10);
+                    rect.setAttribute('width', SPACING - 20);
+                    rect.setAttribute('height', SPACING - 20);
+                    rect.setAttribute('class', 'box');
                     rect.dataset.r = r;
                     rect.dataset.c = c;
                     svg.appendChild(rect);
@@ -96,98 +476,137 @@
             // Create Horizontal Lines
             for (let r = 0; r < ROWS; r++) {
                 for (let c = 0; c < COLS - 1; c++) {
-                    createLine(c * SPACING, r * SPACING, (c + 1) * SPACING, r * SPACING, 'h', r, c);
+                    createLine(
+                        c * SPACING,
+                        r * SPACING,
+                        (c + 1) * SPACING,
+                        r * SPACING,
+                        'h',
+                        r,
+                        c
+                    );
                 }
             }
 
             // Create Vertical Lines
             for (let r = 0; r < ROWS - 1; r++) {
                 for (let c = 0; c < COLS; c++) {
-                    createLine(c * SPACING, r * SPACING, c * SPACING, (r + 1) * SPACING, 'v', r, c);
+                    createLine(
+                        c * SPACING,
+                        r * SPACING,
+                        c * SPACING,
+                        (r + 1) * SPACING,
+                        'v',
+                        r,
+                        c
+                    );
                 }
             }
 
-            // Create Dots (Top layer)
+            // Create Dots (top layer)
             for (let r = 0; r < ROWS; r++) {
                 for (let c = 0; c < COLS; c++) {
-                    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                    circle.setAttribute("cx", c * SPACING);
-                    circle.setAttribute("cy", r * SPACING);
-                    circle.setAttribute("r", 8);
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', c * SPACING);
+                    circle.setAttribute('cy', r * SPACING);
+                    circle.setAttribute('r', 8);
                     svg.appendChild(circle);
                 }
             }
 
-            // Center ViewBox
-            // 300x300 internal
-            const totalW = (COLS-1)*SPACING;
-            const totalH = (ROWS-1)*SPACING;
-            // Pad
-            svg.setAttribute("viewBox", `-20 -20 ${totalW + 40} ${totalH + 40}`);
+            // Set correct viewBox for the grid
+            const totalW = (COLS - 1) * SPACING;
+            const totalH = (ROWS - 1) * SPACING;
+            svg.setAttribute('viewBox', `-20 -20 ${totalW + 40} ${totalH + 40}`);
         }
 
         function createLine(x1, y1, x2, y2, type, r, c) {
-            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            line.setAttribute("x1", x1);
-            line.setAttribute("y1", y1);
-            line.setAttribute("x2", x2);
-            line.setAttribute("y2", y2);
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+
+            line.classList.add('playable');
 
             const lineData = { type, r, c, owner: 0, el: line };
             lines.push(lineData);
 
+            // Mouse events
             line.addEventListener('click', () => handleLineClick(lineData));
-            line.addEventListener('touchstart', (e) => { e.preventDefault(); handleLineClick(lineData); });
+            line.addEventListener('mouseenter', () => handleLineHover(lineData, true));
+            line.addEventListener('mouseleave', () => handleLineHover(lineData, false));
+
+            // Touch events
+            line.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handleLineClick(lineData);
+            });
 
             svg.appendChild(line);
+        }
+
+        function handleLineHover(lineData, entering) {
+            if (!gameActive || lineData.owner !== 0) return;
+            const cls = currentPlayer === 1 ? 'preview-p1' : 'preview-p2';
+            if (entering) {
+                lineData.el.classList.add(cls);
+            } else {
+                lineData.el.classList.remove('preview-p1', 'preview-p2');
+            }
         }
 
         function handleLineClick(lineData) {
             if (!gameActive || lineData.owner !== 0) return;
 
+            // Claim line
             lineData.owner = currentPlayer;
+            lineData.el.classList.remove('preview-p1', 'preview-p2');
             lineData.el.classList.add(`taken-p${currentPlayer}`);
 
             // Check for completed boxes
             let boxMade = false;
 
             if (lineData.type === 'h') {
-                // Check box below (r, c)
+                // Box below (r, c)
                 if (checkBox(lineData.r, lineData.c)) boxMade = true;
-                // Check box above (r-1, c)
+                // Box above (r-1, c)
                 if (lineData.r > 0 && checkBox(lineData.r - 1, lineData.c)) boxMade = true;
             } else {
-                // Check box right (r, c)
+                // Box right (r, c)
                 if (checkBox(lineData.r, lineData.c)) boxMade = true;
-                // Check box left (r, c-1)
+                // Box left (r, c-1)
                 if (lineData.c > 0 && checkBox(lineData.r, lineData.c - 1)) boxMade = true;
             }
 
             if (boxMade) {
-                // Player keeps turn
                 checkWin();
             } else {
                 currentPlayer = currentPlayer === 1 ? 2 : 1;
             }
+
             updateUI();
         }
 
-        function checkBox(r, c) {
-            // Find 4 lines for box(r,c)
-            // Top: h, r, c
-            // Bottom: h, r+1, c
-            // Left: v, r, c
-            // Right: v, r, c+1
+        function getLine(type, r, c) {
+            return lines.find((l) => l.type === type && l.r === r && l.c === c) || null;
+        }
 
-            const top = lines.find(l => l.type === 'h' && l.r === r && l.c === c);
-            const bottom = lines.find(l => l.type === 'h' && l.r === r + 1 && l.c === c);
-            const left = lines.find(l => l.type === 'v' && l.r === r && l.c === c);
-            const right = lines.find(l => l.type === 'v' && l.r === r && l.c === c + 1);
+        function checkBox(r, c) {
+            // Ensure indices are valid
+            if (r < 0 || c < 0 || r >= ROWS - 1 || c >= COLS - 1) return false;
+
+            const top = getLine('h', r, c);
+            const bottom = getLine('h', r + 1, c);
+            const left = getLine('v', r, c);
+            const right = getLine('v', r, c + 1);
+
+            // Defensive checks to avoid null access
+            if (!top || !bottom || !left || !right) return false;
 
             if (top.owner !== 0 && bottom.owner !== 0 && left.owner !== 0 && right.owner !== 0) {
-                // Box complete
-                const box = boxes.find(b => b.r === r && b.c === c);
-                if (box.owner === 0) {
+                const box = boxes.find((b) => b.r === r && b.c === c);
+                if (box && box.owner === 0) {
                     box.owner = currentPlayer;
                     box.el.classList.add(`box-p${currentPlayer}`);
                     scores[currentPlayer]++;
@@ -201,23 +620,69 @@
             p1ScoreEl.innerText = `P1: ${scores[1]}`;
             p2ScoreEl.innerText = `P2: ${scores[2]}`;
 
+            if (!gameActive) {
+                return;
+            }
+
             if (currentPlayer === 1) {
                 p1ScoreEl.classList.add('active');
                 p2ScoreEl.classList.remove('active');
+                statusEl.textContent = "Player 1's turn";
             } else {
                 p2ScoreEl.classList.add('active');
                 p1ScoreEl.classList.remove('active');
+                statusEl.textContent = "Player 2's turn";
             }
         }
 
         function checkWin() {
-            if (scores[1] + scores[2] === (ROWS-1)*(COLS-1)) {
+            const totalBoxes = (ROWS - 1) * (COLS - 1);
+            if (scores[1] + scores[2] === totalBoxes) {
                 gameActive = false;
-                let winner = scores[1] > scores[2] ? "Player 1" : (scores[2] > scores[1] ? "Player 2" : "Tie");
-                setTimeout(() => alert(`Game Over! ${winner} Wins!`), 100);
+                p1ScoreEl.classList.remove('active');
+                p2ScoreEl.classList.remove('active');
+
+                // Show modal with results
+                showGameOverModal();
             }
         }
 
+        function showGameOverModal() {
+            let winnerText = '';
+            let iconEmoji = '';
+            let winnerClass = '';
+
+            if (scores[1] > scores[2]) {
+                winnerText = '🏆 Player 1 Wins!';
+                iconEmoji = '🎉';
+                winnerClass = 'p1';
+            } else if (scores[2] > scores[1]) {
+                winnerText = '🏆 Player 2 Wins!';
+                iconEmoji = '🎊';
+                winnerClass = 'p2';
+            } else {
+                winnerText = '🤝 It\'s a Tie!';
+                iconEmoji = '🎯';
+                winnerClass = 'tie';
+            }
+
+            modalIcon.textContent = iconEmoji;
+            modalWinner.textContent = winnerText;
+            modalWinner.className = `modal-winner ${winnerClass}`;
+            modalScore.textContent = `P1: ${scores[1]} | P2: ${scores[2]}`;
+            statusEl.textContent = winnerText;
+
+            // Show modal with slight delay for effect
+            setTimeout(() => {
+                modal.classList.add('show');
+            }, 300);
+        }
+
+        function hideModal() {
+            modal.classList.remove('show');
+        }
+
+        // Initial start
         initGame();
     </script>
 </body>

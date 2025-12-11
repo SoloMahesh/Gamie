@@ -3,25 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Color Spin</title>
+    <title>Color Spin - Enhanced</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #222; font-family: 'Segoe UI', sans-serif; touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        canvas { display: block; }
-        #score { position: absolute; top: 10%; font-size: 4rem; color: rgba(255,255,255,0.2); font-weight: bold; pointer-events: none; }
-        #instructions { position: absolute; bottom: 10%; color: white; opacity: 0.5; pointer-events: none; }
-        #gameOver { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        button { padding: 15px 30px; font-size: 1.5rem; background: #0984e3; border: none; color: white; cursor: pointer; border-radius: 50px; margin-top: 20px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            touch-action: none; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+        }
+        canvas { display: block; cursor: pointer; }
+        
+        #hud {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 30px;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        #scoreContainer {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        #scoreLabel {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+        
+        #score { 
+            font-size: 2.5rem; 
+            color: #fff; 
+            font-weight: bold; 
+            text-shadow: 0 2px 10px rgba(255, 255, 255, 0.3);
+        }
+        
+        #highScore {
+            background: rgba(255, 215, 0, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 15px 25px;
+            border-radius: 20px;
+            color: #ffd700;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
+        }
+        
+        #instructions { 
+            position: absolute; 
+            bottom: 80px; 
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 15px 40px;
+            border-radius: 30px;
+            color: rgba(255, 255, 255, 0.9); 
+            pointer-events: none;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: opacity 0.3s;
+        }
+        
+        #tapIndicators {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 40px;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+        
+        .tapZone {
+            font-size: 3rem;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        #gameOver { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0, 0, 0, 0.95); 
+            color: white; 
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 10;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        #gameOver h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            background: linear-gradient(45deg, #e74c3c, #f1c40f, #2ecc71, #3498db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stats {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px 50px;
+            border-radius: 20px;
+            margin: 20px 0;
+            min-width: 300px;
+        }
+        
+        .statRow {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            font-size: 1.3rem;
+        }
+        
+        .statLabel {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .statValue {
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        button { 
+            padding: 18px 50px; 
+            font-size: 1.5rem; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            border: none; 
+            color: white; 
+            cursor: pointer; 
+            border-radius: 50px; 
+            margin-top: 20px;
+            box-shadow: 0 5px 25px rgba(102, 126, 234, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 30px rgba(102, 126, 234, 0.6);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
     </style>
 </head>
 <body>
-    <div id="score">0</div>
-    <div id="instructions">Tap Left/Right to Rotate</div>
+    <div id="hud">
+        <div id="scoreContainer">
+            <div id="scoreLabel">Score</div>
+            <div id="score">0</div>
+        </div>
+        <div id="highScore">🏆 Best: <span id="bestScore">0</span></div>
+    </div>
+    
+    <div id="instructions" class="pulse">Tap Left/Right to Rotate</div>
+    
+    <div id="tapIndicators">
+        <div class="tapZone">←</div>
+        <div class="tapZone">→</div>
+    </div>
+    
     <canvas id="gameCanvas"></canvas>
 
     <div id="gameOver">
         <h1>Game Over</h1>
-        <p>Score: <span id="finalScore">0</span></p>
-        <button onclick="resetGame()">Try Again</button>
+        <div class="stats">
+            <div class="statRow">
+                <span class="statLabel">Score:</span>
+                <span class="statValue" id="finalScore">0</span>
+            </div>
+            <div class="statRow">
+                <span class="statLabel">Best Score:</span>
+                <span class="statValue" id="finalBestScore">0</span>
+            </div>
+        </div>
+        <button onclick="resetGame()">🔄 Try Again</button>
     </div>
 
     <script>
@@ -29,15 +225,18 @@
         const ctx = canvas.getContext('2d');
         let width, height;
 
-        const colors = ['#e74c3c', '#f1c40f', '#2ecc71', '#3498db']; // Red, Yellow, Green, Blue
+        const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f']; // Red, Blue, Green, Yellow (clockwise from top)
         let rotatorAngle = 0;
         let targetAngle = 0;
         let balls = [];
         let score = 0;
+        let highScore = parseInt(localStorage.getItem('colorSpinHighScore')) || 0;
         let gameActive = true;
-        let spawnRate = 100;
+        let spawnRate = 120;
         let spawnTimer = 0;
         let particles = [];
+        let comboCount = 0;
+        let lastHitTime = 0;
 
         function resize() {
             width = window.innerWidth;
@@ -54,31 +253,44 @@
             particles = [];
             rotatorAngle = 0;
             targetAngle = 0;
-            spawnRate = 100;
+            spawnRate = 120;
             spawnTimer = 0;
             gameActive = true;
+            comboCount = 0;
             document.getElementById('score').innerText = score;
+            document.getElementById('bestScore').innerText = highScore;
             document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('instructions').style.opacity = '0.6';
+            
+            setTimeout(() => {
+                document.getElementById('instructions').style.opacity = '0';
+            }, 3000);
         }
 
         function spawnBall() {
             const colorIdx = Math.floor(Math.random() * 4);
             balls.push({
-                y: -20,
+                y: -30,
                 colorIdx: colorIdx,
                 color: colors[colorIdx],
-                speed: 3 + Math.min(5, score * 0.1)
+                speed: 2.5 + Math.min(3, score * 0.05),
+                radius: 15
             });
         }
 
         function createParticles(x, y, color) {
-            for(let i=0; i<10; i++) {
+            for(let i=0; i<20; i++) {
+                const angle = (Math.PI * 2 * i) / 20;
+                const speed = 3 + Math.random() * 5;
                 particles.push({
-                    x: x, y: y,
-                    vx: (Math.random() - 0.5) * 10,
-                    vy: (Math.random() - 0.5) * 10,
-                    life: 30,
-                    color: color
+                    x: x, 
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 40 + Math.random() * 20,
+                    maxLife: 60,
+                    color: color,
+                    size: 3 + Math.random() * 3
                 });
             }
         }
@@ -86,173 +298,184 @@
         function update() {
             if (!gameActive) return;
 
-            // Rotation smoothing
-            rotatorAngle += (targetAngle - rotatorAngle) * 0.2;
+            // Smooth rotation with easing
+            const angleDiff = targetAngle - rotatorAngle;
+            rotatorAngle += angleDiff * 0.15;
 
-            // Spawn
+            // Spawn balls
             spawnTimer++;
             if (spawnTimer > spawnRate) {
                 spawnBall();
                 spawnTimer = 0;
-                if (spawnRate > 40) spawnRate--;
+                // Progressive difficulty
+                if (spawnRate > 50) spawnRate -= 0.5;
             }
 
-            // Balls
+            const cx = width / 2;
+            const cy = height / 2 + 100;
+            const rotatorRadius = 80;
+            const collisionThreshold = 25;
+
+            // Update balls
             for (let i = balls.length - 1; i >= 0; i--) {
                 const b = balls[i];
                 b.y += b.speed;
 
-                // Collision
-                const rotatorY = height / 2 + 100; // Center of rotator
-                const rotatorRadius = 60;
-
-                if (b.y > rotatorY - rotatorRadius - 10) {
-                    // Check match
-                    // Rotator has 4 segments:
-                    // 0: 315-45 (Top when 0 deg) - Red
-                    // 1: 45-135 (Right) - Blue
-                    // 2: 135-225 (Bottom) - Green
-                    // 3: 225-315 (Left) - Yellow
-
-                    // Wait, let's define segments properly
-                    // Visual rendering:
-                    // Arc 0: -PI/4 to -3PI/4 (Top-Left) ?
-                    // Let's standard:
-                    // 0: Top (Red)
-                    // 1: Right (Yellow)
-                    // 2: Bottom (Green)
-                    // 3: Left (Blue)
-
-                    // Angle 0 puts Red at Top.
-                    // Rotation is added.
-                    // If we rotate 90 deg (PI/2), Blue moves to Top.
-                    // So Top Color Index depends on rotation.
-                    // Angle 0 -> Idx 0 at top.
-                    // Angle 90 -> Idx 3 at top.
-                    // Angle 180 -> Idx 2 at top.
-                    // Angle 270 -> Idx 1 at top.
-                    // Basically: (0 - rotation / 90) % 4
-
-                    // Normalized angle (0 to 360)
-                    let deg = (rotatorAngle * 180 / Math.PI) % 360;
-                    if (deg < 0) deg += 360;
-
-                    // Which quadrant is facing UP (270 deg / -90 deg visual)? No, ball falls from TOP (270/-90 in standard math, but here Y is down so 270 is up).
-                    // Actually let's just trace the angle.
-                    // Segment 0 (Red) starts at -45 deg to 45 deg (centered at 0, facing Right)??
-                    // Let's implement render first to match logic.
-
-                    // Re-Logic:
-                    // Render:
-                    // 0 (Red): -PI/4 to -3PI/4 (Top)
-                    // Wait, circle arcs.
-                    // Let's say Red is normally Top (-PI/2).
-                    // Width PI/2. So -3PI/4 to -PI/4.
-
-                    // Check:
-                    // Effective rotation of the wheel relative to the ball (which is at -PI/2 angle relative to center)
-                    // Ball hits top.
-                    // We need the color of the sector at -PI/2.
-                    // Wheel is rotated by `rotatorAngle`.
-                    // So we look up color at angle (-PI/2 - rotatorAngle).
-
-                    // Map angle to index 0-3.
-                    // 0: Red, 1: Yellow, 2: Green, 3: Blue
-
-                    // hitAngle = -PI/2 - rotatorAngle
-                    // Normalize to 0-2PI
-                    let hitA = (-Math.PI/2 - rotatorAngle) % (Math.PI * 2);
-                    if (hitA < 0) hitA += Math.PI * 2;
-
-                    // Sectors: 0(Red), 1(Yellow), 2(Green), 3(Blue) distributed 0-2PI?
-                    // Let's define:
-                    // 0 (Red): 0 - PI/2
-                    // 1 (Yellow): PI/2 - PI
-                    // 2 (Green): PI - 3PI/2
-                    // 3 (Blue): 3PI/2 - 2PI
-
-                    // Wait, ball hits Top. That is angle 3PI/2 (270 deg) in standard circle, or -PI/2.
-                    // So we check which sector contains `hitA`.
-
-                    let sector = Math.floor(hitA / (Math.PI/2));
-
-                    // Map sector to color index
-                    // If my render draws Red at 0-90, Yellow 90-180...
-                    // Then logic holds.
-
-                    if (sector === b.colorIdx) {
-                        // Match
+                // Distance-based collision detection (more reliable)
+                const dist = Math.abs(b.y - cy);
+                
+                if (dist < collisionThreshold && dist > 0) {
+                    // Determine which segment is at the TOP position (-PI/2 or 3PI/2)
+                    // Ball falls from top, which is at angle -PI/2 from center
+                    const ballAngle = -Math.PI / 2;
+                    
+                    // Adjust for rotation
+                    let adjustedAngle = ballAngle - rotatorAngle;
+                    
+                    // Normalize to 0 to 2PI
+                    while (adjustedAngle < 0) adjustedAngle += Math.PI * 2;
+                    while (adjustedAngle >= Math.PI * 2) adjustedAngle -= Math.PI * 2;
+                    
+                    // Determine segment (0-3)
+                    // Segment 0 (Red): 0 to PI/2
+                    // Segment 1 (Blue): PI/2 to PI
+                    // Segment 2 (Green): PI to 3PI/2
+                    // Segment 3 (Yellow): 3PI/2 to 2PI
+                    const hitSegment = Math.floor(adjustedAngle / (Math.PI / 2)) % 4;
+                    
+                    if (hitSegment === b.colorIdx) {
+                        // Match - success!
                         score++;
+                        comboCount++;
                         document.getElementById('score').innerText = score;
-                        createParticles(width/2, b.y, b.color);
+                        createParticles(cx, b.y, b.color);
                         balls.splice(i, 1);
+                        
+                        // Update high score
+                        if (score > highScore) {
+                            highScore = score;
+                            localStorage.setItem('colorSpinHighScore', highScore);
+                            document.getElementById('bestScore').innerText = highScore;
+                        }
                     } else {
-                        // Fail
+                        // Mismatch - game over
                         gameOver();
                     }
+                } else if (b.y > height + 50) {
+                    // Ball went off-screen without collision - also game over
+                    gameOver();
                 }
             }
 
-            // Particles
+            // Update particles
             for(let i=particles.length-1; i>=0; i--) {
                 const p = particles[i];
                 p.x += p.vx;
                 p.y += p.vy;
+                p.vy += 0.2; // Gravity
                 p.life--;
                 if(p.life <= 0) particles.splice(i, 1);
             }
         }
 
         function gameOver() {
+            if (!gameActive) return;
             gameActive = false;
             document.getElementById('finalScore').innerText = score;
+            document.getElementById('finalBestScore').innerText = highScore;
             document.getElementById('gameOver').style.display = 'flex';
         }
 
         function draw() {
-            ctx.clearRect(0, 0, width, height);
+            // Clear with subtle fade effect
+            ctx.fillStyle = 'rgba(34, 34, 34, 0.1)';
+            ctx.fillRect(0, 0, width, height);
 
             const cx = width / 2;
             const cy = height / 2 + 100;
             const r = 80;
-            const thickness = 20;
+            const thickness = 25;
 
-            // Draw Rotator
+            // Draw glow effect
             ctx.save();
             ctx.translate(cx, cy);
             ctx.rotate(rotatorAngle);
-
+            
+            // Outer glow
             for(let i=0; i<4; i++) {
+                const gradient = ctx.createRadialGradient(0, 0, r - thickness, 0, 0, r + 10);
+                gradient.addColorStop(0, colors[i]);
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                
                 ctx.beginPath();
                 ctx.arc(0, 0, r, i * Math.PI/2, (i+1) * Math.PI/2);
                 ctx.strokeStyle = colors[i];
                 ctx.lineWidth = thickness;
+                ctx.lineCap = 'round';
                 ctx.stroke();
             }
 
-            // Inner circle
-            ctx.fillStyle = "#333";
+            // Inner circle with gradient
+            const innerGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, r - thickness);
+            innerGradient.addColorStop(0, '#2a2a2a');
+            innerGradient.addColorStop(1, '#1a1a1a');
+            ctx.fillStyle = innerGradient;
             ctx.beginPath();
             ctx.arc(0, 0, r - thickness/2, 0, Math.PI*2);
             ctx.fill();
 
+            // Center dot
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(0, 0, 8, 0, Math.PI * 2);
+            ctx.fill();
+
             ctx.restore();
 
-            // Draw Balls
+            // Draw balls with shadow
             balls.forEach(b => {
-                ctx.fillStyle = b.color;
+                // Shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
                 ctx.beginPath();
-                ctx.arc(cx, b.y, 15, 0, Math.PI * 2);
+                ctx.arc(cx + 3, b.y + 3, b.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Ball
+                const ballGradient = ctx.createRadialGradient(cx - 5, b.y - 5, 0, cx, b.y, b.radius);
+                ballGradient.addColorStop(0, b.color);
+                ballGradient.addColorStop(1, shadeColor(b.color, -30));
+                ctx.fillStyle = ballGradient;
+                ctx.beginPath();
+                ctx.arc(cx, b.y, b.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Highlight
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.beginPath();
+                ctx.arc(cx - 5, b.y - 5, 5, 0, Math.PI * 2);
                 ctx.fill();
             });
 
-            // Particles
+            // Draw particles with fade
             particles.forEach(p => {
                 ctx.fillStyle = p.color;
-                ctx.globalAlpha = p.life / 30;
-                ctx.fillRect(p.x, p.y, 5, 5);
+                ctx.globalAlpha = p.life / p.maxLife;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
                 ctx.globalAlpha = 1;
             });
+        }
+
+        function shadeColor(color, percent) {
+            const num = parseInt(color.replace("#",""), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 +
+                (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255))
+                .toString(16).slice(1);
         }
 
         function loop() {
@@ -261,16 +484,22 @@
             requestAnimationFrame(loop);
         }
 
-        // Input
+        // Input handlers
         document.addEventListener('keydown', e => {
-            if (e.key === 'ArrowLeft') targetAngle -= Math.PI / 2;
-            if (e.key === 'ArrowRight') targetAngle += Math.PI / 2;
+            if (!gameActive) return;
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                targetAngle -= Math.PI / 2;
+            }
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                targetAngle += Math.PI / 2;
+            }
         });
 
         document.addEventListener('touchstart', e => {
-            e.preventDefault();
             if (!gameActive) return;
-            if (e.touches[0].clientX < width / 2) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            if (touch.clientX < width / 2) {
                 targetAngle -= Math.PI / 2;
             } else {
                 targetAngle += Math.PI / 2;
@@ -286,9 +515,10 @@
             }
         });
 
+        // Initialize
+        document.getElementById('bestScore').innerText = highScore;
         resetGame();
         loop();
-
     </script>
 </body>
 </html>
