@@ -13,7 +13,6 @@
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             touch-action: none;
-            /* Prevent default touch behavior */
         }
 
         :root {
@@ -97,7 +96,7 @@
             background: linear-gradient(135deg, #8B4513, #A0522D);
             border-radius: 0 0 10px 10px;
             z-index: 5;
-            transition: transform 0.1s ease;
+            will-change: transform;
         }
 
         .basket::before {
@@ -130,13 +129,13 @@
             height: 40px;
             border-radius: 50%;
             z-index: 3;
-            /* animation: fall linear forwards; REMOVED */
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 20px;
             color: var(--white);
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            will-change: transform;
         }
 
         .food.fruit {
@@ -163,6 +162,7 @@
             background: rgba(255, 255, 255, 0.8);
             z-index: 4;
             animation: explode 0.3s forwards;
+            pointer-events: none;
         }
 
         .game-over {
@@ -236,17 +236,13 @@
             z-index: 6;
             opacity: 0.9;
             pointer-events: none;
-            /* Let clicks pass through */
         }
-
-        /* Animation removed to prevent conflict with JS loop */
 
         @keyframes explode {
             0% {
                 transform: scale(0);
                 opacity: 1;
             }
-
             100% {
                 transform: scale(2);
                 opacity: 0;
@@ -430,7 +426,7 @@
         </div>
 
         <div id="start-modal" class="modal">
-            <h1>Food Catcher</h1>
+            <h1>🍎 Food Catcher 🥦</h1>
             <p>Catch healthy foods to score points!</p>
             <p>Avoid <span style="color: #ff6b6b;">Junk Food</span> as it hurts your health.</p>
             <div class="food-legend">
@@ -455,10 +451,13 @@
         let basketPosition = 50;
         let foods = [];
         let foodCounts = { fruit: 0, vegetable: 0, dessert: 0 };
-        let gameInterval;
         let spawnInterval;
         let timerInterval;
         let keysPressed = {};
+        let animationFrameId = null;
+        let explosionCount = 0;
+        let frameCount = 0; // CRITICAL: Track frames for periodic cleanup
+        let lastTime = 0;
 
         // Food types configuration
         const foodTypes = [
@@ -472,7 +471,7 @@
             { type: 'junk', emoji: '🍕', points: -20, health: -15, color: 'junk' }
         ];
 
-        // DOM elements
+        // DOM elements - Cache once
         const gameBoard = document.getElementById('game-board');
         const basket = document.getElementById('basket');
         const scoreElement = document.getElementById('score');
@@ -498,12 +497,20 @@
             gameTime = 60;
             foodSpeed = 3;
             basketPosition = 50;
-            foods = [];
             foodCounts = { fruit: 0, vegetable: 0, dessert: 0 };
             keysPressed = {};
+            explosionCount = 0;
+            frameCount = 0;
+            lastTime = performance.now();
 
-            // Clear existing elements
-            document.querySelectorAll('.food, .explosion').forEach(el => el.remove());
+            // CRITICAL FIX: Complete cleanup before starting
+            cleanupGame();
+
+            // Clear existing DOM elements
+            const existingElements = gameBoard.querySelectorAll('.food, .explosion');
+            existingElements.forEach(el => {
+                el.remove();
+            });
 
             // Update UI
             scoreElement.textContent = score;
@@ -514,14 +521,14 @@
             dessertCountElement.textContent = foodCounts.dessert;
             gameOverScreen.classList.remove('show');
 
-            // Clear previous intervals if any
-            if (gameInterval) clearInterval(gameInterval);
-            if (spawnInterval) clearInterval(spawnInterval);
-            if (timerInterval) clearInterval(timerInterval);
+            // Reset basket position
+            basket.style.left = basketPosition + '%';
 
-            // Start game loops
-            gameInterval = setInterval(gameLoop, 1000 / 60);
-            spawnInterval = setInterval(spawnFood, 1200);
+            // Start game loop with requestAnimationFrame
+            animationFrameId = requestAnimationFrame(gameLoop);
+            
+            // CRITICAL: Adjusted spawn rate to prevent overcrowding
+            spawnInterval = setInterval(spawnFood, 1400);
 
             // Start timer
             timerInterval = setInterval(() => {
@@ -536,30 +543,82 @@
             }, 1000);
         }
 
-        // Game loop
-        function gameLoop() {
+        // CRITICAL: Proper cleanup function
+        function cleanupGame() {
+            // Clear all intervals and animation frames
+            if (spawnInterval) {
+                clearInterval(spawnInterval);
+                spawnInterval = null;
+            }
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+
+            // Clean up foods array properly
+            foods.forEach(food => {
+                if (food && food.parentNode) {
+                    food.remove();
+                }
+            });
+            foods.length = 0; // Clear array properly
+        }
+
+        // OPTIMIZED: Game loop with periodic garbage collection
+        function gameLoop(currentTime) {
             if (!gameRunning) return;
+
+            // CRITICAL: Periodic cleanup to prevent memory buildup
+            frameCount++;
+            if (frameCount % 180 === 0) { // Every 3 seconds at 60fps
+                // Force garbage collection opportunity
+                const validFoods = foods.filter(food => food && food.parentNode);
+                foods = validFoods;
+            }
 
             // Handle continuous movement
             if (keysPressed['ArrowLeft']) {
-                basketPosition = Math.max(5, basketPosition - 1.5); // Slower desktop movement
+                basketPosition = Math.max(5, basketPosition - 1.8);
                 basket.style.left = basketPosition + '%';
             }
             if (keysPressed['ArrowRight']) {
-                basketPosition = Math.min(95, basketPosition + 1.5);
+                basketPosition = Math.min(95, basketPosition + 1.8);
                 basket.style.left = basketPosition + '%';
             }
 
-            // Move foods - Iterate backwards to safely remove elements
+            // CRITICAL: Limit max foods on screen to prevent DOM overload
+            const maxFoodsOnScreen = 15;
+            if (foods.length > maxFoodsOnScreen) {
+                // Remove oldest food items
+                const toRemove = foods.slice(0, foods.length - maxFoodsOnScreen);
+                toRemove.forEach(food => {
+                    if (food && food.parentNode) food.remove();
+                });
+                foods = foods.slice(foods.length - maxFoodsOnScreen);
+            }
+
+            // Move foods - Iterate backwards
+            const boardHeight = gameBoard.clientHeight;
             for (let i = foods.length - 1; i >= 0; i--) {
                 const food = foods[i];
-                const currentTop = parseInt(food.style.top) || -50;
-                food.style.top = (currentTop + foodSpeed) + 'px';
-                food.style.transform = `rotate(${currentTop}deg)`;
+
+                // Safety check
+                if (!food || !food.parentNode || !food.style) {
+                    foods.splice(i, 1);
+                    continue;
+                }
+
+                const currentTop = parseFloat(food.style.top) || -50;
+                const newTop = currentTop + foodSpeed;
+                food.style.top = newTop + 'px';
+                food.style.transform = `rotate(${newTop * 0.3}deg)`;
 
                 // Check if food reached bottom
-                if (currentTop > gameBoard.clientHeight) {
-                    // Only punish for good food falling
+                if (newTop > boardHeight + 50) {
                     const foodType = food.dataset.type;
                     if (foodType !== 'junk') {
                         health -= 5;
@@ -567,20 +626,28 @@
 
                         if (health <= 0) {
                             endGame();
+                            return;
                         }
                     }
-                    if (food.parentNode) food.remove();
+                    // Remove element
+                    food.remove();
                     foods.splice(i, 1);
                 }
             }
 
             // Check collisions
             checkCollisions();
+
+            // Continue loop
+            animationFrameId = requestAnimationFrame(gameLoop);
         }
 
-        // Spawn food
+        // Spawn food with rate limiting
         function spawnFood() {
             if (!gameRunning) return;
+
+            // CRITICAL: Prevent spawning if too many foods exist
+            if (foods.length >= 15) return;
 
             const foodConfig = foodTypes[Math.floor(Math.random() * foodTypes.length)];
             const food = document.createElement('div');
@@ -589,31 +656,43 @@
             food.dataset.type = foodConfig.type;
             food.dataset.points = foodConfig.points;
             food.dataset.health = foodConfig.health;
-            food.style.left = Math.random() * (gameBoard.clientWidth - 40) + 'px';
-            // food.style.animationDuration = (8 - Math.min(7, gameTime/12)) + 's'; // Removed CSS animation
+            
+            const maxLeft = gameBoard.clientWidth - 40;
+            food.style.left = Math.random() * maxLeft + 'px';
+            food.style.top = '-50px';
+            
             gameBoard.appendChild(food);
             foods.push(food);
 
-            // Increase difficulty
-            // Increase difficulty based on time elapsed
-            foodSpeed = 3 + (60 - gameTime) * 0.1;
-            // Cap speed
-            if (foodSpeed > 10) foodSpeed = 10;
+            // CRITICAL: Smoother difficulty curve to prevent overwhelming at 30-35s
+            const elapsedTime = 60 - gameTime;
+            foodSpeed = 3 + (elapsedTime * 0.06); // Reduced from 0.08
+            if (foodSpeed > 7.5) foodSpeed = 7.5; // Lower cap from 9
         }
 
-        // Check collisions between basket and food
+        // OPTIMIZED: Collision detection with caching
         function checkCollisions() {
-            // Iterate backwards to safely remove elements
+            const basketRect = basket.getBoundingClientRect();
+            const basketLeft = basketRect.left;
+            const basketRight = basketRect.right;
+            const basketTop = basketRect.top;
+            const basketBottom = basketRect.bottom;
+
             for (let i = foods.length - 1; i >= 0; i--) {
                 const food = foods[i];
+
+                if (!food || !food.getBoundingClientRect || !food.parentNode) {
+                    foods.splice(i, 1);
+                    continue;
+                }
+
                 const foodRect = food.getBoundingClientRect();
-                const basketRect = basket.getBoundingClientRect();
 
                 if (
-                    foodRect.left < basketRect.right &&
-                    foodRect.right > basketRect.left &&
-                    foodRect.top < basketRect.bottom &&
-                    foodRect.bottom > basketRect.top
+                    foodRect.left < basketRight &&
+                    foodRect.right > basketLeft &&
+                    foodRect.top < basketBottom &&
+                    foodRect.bottom > basketTop
                 ) {
                     // Handle collision
                     const points = parseInt(food.dataset.points);
@@ -631,6 +710,7 @@
 
                         if (health <= 0) {
                             endGame();
+                            return;
                         }
                     }
 
@@ -643,15 +723,18 @@
                     // Create explosion effect
                     createExplosion(foodRect.left + foodRect.width / 2, foodRect.top + foodRect.height / 2);
 
-                    // Remove food
-                    if (food.parentNode) food.remove();
+                    // Remove element
+                    food.remove();
                     foods.splice(i, 1);
                 }
             }
         }
 
-        // Create explosion effect
+        // OPTIMIZED: Strict explosion limiting
         function createExplosion(x, y) {
+            if (explosionCount > 5) return; // Reduced from 10
+
+            explosionCount++;
             const explosion = document.createElement('div');
             explosion.className = 'explosion';
             explosion.style.left = (x - 30) + 'px';
@@ -659,7 +742,10 @@
             gameBoard.appendChild(explosion);
 
             setTimeout(() => {
-                explosion.remove();
+                if (explosion.parentNode) {
+                    explosion.remove();
+                }
+                explosionCount--;
             }, 300);
         }
 
@@ -670,25 +756,30 @@
             dessertCountElement.textContent = foodCounts.dessert;
         }
 
-        // End game
+        // End game with complete cleanup
         function endGame() {
             gameRunning = false;
-            clearInterval(gameInterval);
-            clearInterval(spawnInterval);
-            clearInterval(timerInterval);
+            cleanupGame();
+            
             finalScoreElement.textContent = score;
             gameOverScreen.classList.add('show');
         }
 
-        // Event listeners for continuous movement
-        document.addEventListener('keydown', (e) => {
+        // Event listeners
+        function handleKeyDown(e) {
             if (!gameRunning) return;
-            keysPressed[e.key] = true;
-        });
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                keysPressed[e.key] = true;
+            }
+        }
 
-        document.addEventListener('keyup', (e) => {
+        function handleKeyUp(e) {
             keysPressed[e.key] = false;
-        });
+        }
+
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
 
         restartBtn.addEventListener('click', initGame);
 
@@ -696,25 +787,25 @@
         let previousTouchX = 0;
 
         gameBoard.addEventListener('touchstart', (e) => {
+            e.preventDefault();
             previousTouchX = e.touches[0].clientX;
         }, { passive: false });
 
         gameBoard.addEventListener('touchmove', (e) => {
             if (!gameRunning) return;
+            e.preventDefault();
+            
             const currentTouchX = e.touches[0].clientX;
             const deltaX = currentTouchX - previousTouchX;
             previousTouchX = currentTouchX;
 
             const containerWidth = gameBoard.clientWidth;
-            const sensitivity = 1.2;
+            const sensitivity = 1.0; // Reduced from 1.2
             const deltaPercent = (deltaX / containerWidth) * 100 * sensitivity;
 
             basketPosition = Math.max(5, Math.min(95, basketPosition + deltaPercent));
             basket.style.left = basketPosition + '%';
         }, { passive: false });
-
-        // Start the game - Removed automatic initGame()
-        // initGame();
     </script>
 </body>
 
