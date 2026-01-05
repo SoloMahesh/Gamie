@@ -6,9 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2048 Puzzle</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
-            background: #faf8ef;
+            background: linear-gradient(135deg, #faf8ef 0%, #f5f0e6 100%);
             font-family: 'Segoe UI', sans-serif;
             display: flex;
             flex-direction: column;
@@ -21,6 +25,7 @@
         .header {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             width: 90%;
             max-width: 500px;
             margin-bottom: 20px;
@@ -30,6 +35,7 @@
             font-size: 60px;
             color: #776e65;
             margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .scores {
@@ -38,61 +44,103 @@
         }
 
         .score-box {
-            background: #bbada0;
-            padding: 5px 15px;
-            border-radius: 5px;
+            background: linear-gradient(145deg, #c4b5a6, #bbada0);
+            padding: 8px 18px;
+            border-radius: 8px;
             color: white;
             text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            min-width: 80px;
         }
 
         .score-label {
-            font-size: 14px;
+            font-size: 12px;
             color: #eee4da;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .score-val {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: bold;
+        }
+
+        .game-wrapper {
+            position: relative;
         }
 
         .game-container {
             position: relative;
             width: 320px;
             height: 320px;
-            background: #bbada0;
-            border-radius: 10px;
+            background: linear-gradient(145deg, #c4b5a6, #bbada0);
+            border-radius: 12px;
             padding: 10px;
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             touch-action: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
         }
 
         .cell {
-            background: #cdc1b4;
-            border-radius: 5px;
+            background: rgba(238, 228, 218, 0.35);
+            border-radius: 6px;
             width: 100%;
             height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 30px;
-            font-weight: bold;
-            color: #776e65;
         }
 
         .tile {
             position: absolute;
             width: 67.5px;
             height: 67.5px;
-            border-radius: 5px;
+            border-radius: 6px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 30px;
+            font-size: 28px;
             font-weight: bold;
             color: #776e65;
-            transition: all 0.15s ease-in-out;
+            transition: all 0.12s ease-out;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .tile-new {
+            animation: tileAppear 0.2s ease-out;
+        }
+
+        @keyframes tileAppear {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .tile-merged {
+            animation: tileMerge 0.2s ease-out;
+        }
+
+        @keyframes tileMerge {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.15);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         .tile-2 {
@@ -104,79 +152,229 @@
         }
 
         .tile-8 {
-            background: #f2b179;
+            background: linear-gradient(145deg, #f5b97a, #f2b179);
             color: #f9f6f2;
         }
 
         .tile-16 {
-            background: #f59563;
+            background: linear-gradient(145deg, #f7a064, #f59563);
             color: #f9f6f2;
         }
 
         .tile-32 {
-            background: #f67c5f;
+            background: linear-gradient(145deg, #f88568, #f67c5f);
             color: #f9f6f2;
         }
 
         .tile-64 {
-            background: #f65e3b;
+            background: linear-gradient(145deg, #f86f45, #f65e3b);
             color: #f9f6f2;
         }
 
         .tile-128 {
-            background: #edcf72;
+            background: linear-gradient(145deg, #f0d87a, #edcf72);
             color: #f9f6f2;
-            font-size: 24px;
+            font-size: 22px;
+            box-shadow: 0 0 30px 10px rgba(243, 215, 116, 0.3);
         }
 
         .tile-256 {
-            background: #edcc61;
+            background: linear-gradient(145deg, #f0d46a, #edcc61);
             color: #f9f6f2;
-            font-size: 24px;
+            font-size: 22px;
+            box-shadow: 0 0 30px 10px rgba(243, 215, 116, 0.4);
         }
 
         .tile-512 {
-            background: #edc850;
+            background: linear-gradient(145deg, #f0cf5a, #edc850);
             color: #f9f6f2;
-            font-size: 24px;
+            font-size: 22px;
+            box-shadow: 0 0 30px 10px rgba(243, 215, 116, 0.5);
         }
 
         .tile-1024 {
-            background: #edc53f;
+            background: linear-gradient(145deg, #f0cb4a, #edc53f);
             color: #f9f6f2;
-            font-size: 18px;
+            font-size: 16px;
+            box-shadow: 0 0 30px 10px rgba(243, 215, 116, 0.6);
         }
 
         .tile-2048 {
-            background: #edc22e;
+            background: linear-gradient(145deg, #f0c838, #edc22e);
             color: #f9f6f2;
-            font-size: 18px;
+            font-size: 16px;
+            box-shadow: 0 0 40px 15px rgba(237, 194, 46, 0.7);
+            animation: tile2048 1s ease-in-out infinite alternate;
         }
 
-        #gameOver {
-            position: absolute;
+        @keyframes tile2048 {
+            from {
+                box-shadow: 0 0 40px 15px rgba(237, 194, 46, 0.5);
+            }
+
+            to {
+                box-shadow: 0 0 50px 20px rgba(237, 194, 46, 0.8);
+            }
+        }
+
+        .tile-super {
+            background: linear-gradient(145deg, #3c3a32, #2d2b24);
+            color: #f9f6f2;
+            font-size: 14px;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(238, 228, 218, 0.73);
-            display: flex;
-            flex-direction: column;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
             justify-content: center;
             align-items: center;
-            z-index: 10;
-            display: none;
+            z-index: 100;
+            backdrop-filter: blur(5px);
         }
 
-        button {
-            background: #8f7a66;
+        .modal-content {
+            background: linear-gradient(145deg, #ffffff, #f5f0e6);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 90%;
+            width: 380px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes modalPop {
+            from {
+                transform: scale(0.5) translateY(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-icon {
+            font-size: 64px;
+            margin-bottom: 10px;
+        }
+
+        .modal-title {
+            font-size: 2.2rem;
+            color: #776e65;
+            margin: 0 0 15px 0;
+            font-weight: bold;
+        }
+
+        .modal-title.win {
+            background: linear-gradient(90deg, #edc22e, #f2b179, #edc22e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .modal-score {
+            font-size: 1.1rem;
+            color: #8f8a82;
+            margin-bottom: 8px;
+        }
+
+        .modal-score span {
+            font-weight: bold;
+            color: #776e65;
+            font-size: 1.3rem;
+        }
+
+        .high-score-badge {
+            display: inline-block;
+            background: linear-gradient(145deg, #edc22e, #f2b179);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin: 15px 0;
+            box-shadow: 0 4px 15px rgba(237, 194, 46, 0.4);
+            animation: badgePulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes badgePulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+
+        .modal-btn {
+            background: linear-gradient(145deg, #9a8b7c, #8f7a66);
             color: white;
             border: none;
-            padding: 10px 20px;
-            font-size: 18px;
-            border-radius: 5px;
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            border-radius: 10px;
             cursor: pointer;
-            margin-top: 10px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-btn.primary {
+            background: linear-gradient(145deg, #edc53f, #edc22e);
+            color: #776e65;
+        }
+
+        .modal-btn.primary:hover {
+            background: linear-gradient(145deg, #f0cb4a, #edc53f);
+        }
+
+        /* New Game Button */
+        .new-game-btn {
+            background: linear-gradient(145deg, #9a8b7c, #8f7a66);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .new-game-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .instructions {
+            color: #9a8a7a;
+            margin-top: 15px;
+            font-size: 14px;
         }
 
         @media (min-width: 500px) {
@@ -188,7 +386,22 @@
             .tile {
                 width: 100px;
                 height: 100px;
-                font-size: 40px;
+                font-size: 36px;
+            }
+
+            .tile-128,
+            .tile-256,
+            .tile-512 {
+                font-size: 28px;
+            }
+
+            .tile-1024,
+            .tile-2048 {
+                font-size: 22px;
+            }
+
+            .tile-super {
+                font-size: 18px;
             }
         }
     </style>
@@ -199,66 +412,84 @@
         <h1>2048</h1>
         <div class="scores">
             <div class="score-box">
-                <div class="score-label">SCORE</div>
+                <div class="score-label">Score</div>
                 <div class="score-val" id="score">0</div>
             </div>
             <div class="score-box">
-                <div class="score-label">BEST</div>
+                <div class="score-label">Best</div>
                 <div class="score-val" id="bestScore">0</div>
             </div>
         </div>
     </div>
 
-    <div class="game-container" id="grid">
-        <!-- Cells -->
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-
-        <!-- Tiles will be added here via JS -->
-
-        <div id="gameOver">
-            <h2 id="gameOverTitle">Game Over!</h2>
-            <p id="highScoreMsg" style="color: #edc22e; font-size: 1.2rem; display: none;">🏆 NEW BEST SCORE! 🏆</p>
-            <p>Final Score: <span id="finalScore">0</span></p>
-            <div style="display: flex; gap: 10px;">
-                <button onclick="initGame()">Play Again</button>
-            </div>
+    <div class="game-wrapper">
+        <div class="game-container" id="grid">
+            <!-- Cells -->
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
         </div>
     </div>
 
-    <button onclick="initGame()">New Game</button>
-    <p style="color: #776e65;">Use Arrow Keys or Swipe</p>
+    <button class="new-game-btn" onclick="initGame()">New Game</button>
+    <p class="instructions">Use Arrow Keys or Swipe to play</p>
+
+    <!-- Game Over / Win Modal -->
+    <div class="modal-overlay" id="gameModal">
+        <div class="modal-content">
+            <div class="modal-icon" id="modalIcon">😔</div>
+            <h2 class="modal-title" id="modalTitle">Game Over!</h2>
+            <div class="high-score-badge" id="highScoreBadge" style="display: none;">🏆 NEW HIGH SCORE!</div>
+            <div class="modal-score">Final Score: <span id="finalScore">0</span></div>
+            <div class="modal-score">Best Score: <span id="modalBestScore">0</span></div>
+            <div class="modal-buttons">
+                <button class="modal-btn" onclick="closeModal()">Close</button>
+                <button class="modal-btn primary" onclick="closeModal(); initGame();">Play Again</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         const gridContainer = document.getElementById('grid');
         const scoreDisplay = document.getElementById('score');
         const bestDisplay = document.getElementById('bestScore');
-        const gameOverScreen = document.getElementById('gameOver');
+        const gameModal = document.getElementById('gameModal');
+        const modalIcon = document.getElementById('modalIcon');
+        const modalTitle = document.getElementById('modalTitle');
+        const finalScoreSpan = document.getElementById('finalScore');
+        const modalBestScore = document.getElementById('modalBestScore');
+        const highScoreBadge = document.getElementById('highScoreBadge');
 
         let grid = [];
         let score = 0;
-        let bestScore = localStorage.getItem('2048-best') || 0;
+        let bestScore = parseInt(localStorage.getItem('2048-best')) || 0;
+        let gameOver = false;
+        let hasWon = false;
+        let continueAfterWin = false;
+
         bestDisplay.innerText = bestScore;
 
         function initGame() {
             grid = Array(4).fill().map(() => Array(4).fill(0));
             score = 0;
+            gameOver = false;
+            hasWon = false;
+            continueAfterWin = false;
             scoreDisplay.innerText = score;
-            gameOverScreen.style.display = 'none';
+            gameModal.style.display = 'none';
 
             // Remove existing tiles
             const tiles = document.querySelectorAll('.tile');
@@ -276,14 +507,15 @@
                     if (grid[r][c] === 0) emptyCells.push({ r, c });
                 }
             }
-            if (emptyCells.length === 0) return;
+            if (emptyCells.length === 0) return null;
 
             const { r, c } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
             grid[r][c] = Math.random() < 0.9 ? 2 : 4;
+            return { r, c };
         }
 
-        function render() {
-            // We re-render all tiles for simplicity (improving animations would require ID tracking)
+        function render(newTilePos = null) {
+            // Remove existing tiles
             const tiles = document.querySelectorAll('.tile');
             tiles.forEach(t => t.remove());
 
@@ -295,8 +527,20 @@
                 for (let c = 0; c < 4; c++) {
                     if (grid[r][c] !== 0) {
                         const tile = document.createElement('div');
-                        tile.className = `tile tile-${grid[r][c]}`;
-                        tile.innerText = grid[r][c];
+                        const value = grid[r][c];
+                        let tileClass = `tile tile-${value}`;
+
+                        if (value > 2048) {
+                            tileClass = 'tile tile-super';
+                        }
+
+                        // Add animation class for new tiles
+                        if (newTilePos && newTilePos.r === r && newTilePos.c === c) {
+                            tileClass += ' tile-new';
+                        }
+
+                        tile.className = tileClass;
+                        tile.innerText = value;
                         tile.style.left = `${gap + c * (tileSize + gap)}px`;
                         tile.style.top = `${gap + r * (tileSize + gap)}px`;
                         tile.style.width = `${tileSize}px`;
@@ -308,36 +552,9 @@
         }
 
         function move(dir) {
+            if (gameOver) return;
+
             let moved = false;
-            const newGrid = JSON.parse(JSON.stringify(grid));
-
-            // Logic for moving
-            // dir: 0=up, 1=right, 2=down, 3=left
-
-            const rotate = (matrix) => matrix[0].map((val, index) => matrix.map(row => row[index]).reverse());
-            const rotateLeft = (matrix) => matrix[0].map((val, index) => matrix.map(row => row[row.length - 1 - index]));
-
-            // Standardize to Left move
-            let rotated = newGrid;
-            for (let i = 0; i < dir; i++) rotated = rotateLeft(rotated); // Rotate to align direction to Left?
-            // Actually:
-            // Up (0): Rotate Left once? No.
-            // Let's implement row processing.
-
-            /*
-              Up: Rotate Left (so top becomes left) -> Slide Left -> Rotate Right
-              Right: Rotate 180 (so right becomes left) -> Slide Left -> Rotate 180
-              Down: Rotate Right -> Slide Left -> Rotate Left
-              Left: Slide Left
-            */
-            // Better:
-            // 0: Up, 1: Right, 2: Down, 3: Left
-
-            let rotationCount = 0;
-            if (dir === 0) rotationCount = 1; // Left -> Top
-            if (dir === 1) rotationCount = 2; // Left -> Right? No.
-
-            // Let's stick to simple loops.
 
             const vectors = {
                 0: { x: 0, y: -1 }, // Up
@@ -374,7 +591,7 @@
                             // Move into empty
                             grid[next.y][next.x] = tile;
                             grid[cell.y][cell.x] = 0;
-                            cell = { x: next.x, y: next.y }; // update current pos
+                            cell = { x: next.x, y: next.y };
                             next = { x: cell.x + vector.x, y: cell.y + vector.y };
                             moved = true;
                         } else if (nextCellVal === tile && !merged[next.y][next.x]) {
@@ -384,9 +601,14 @@
                             merged[next.y][next.x] = true;
                             score += grid[next.y][next.x];
                             moved = true;
-                            break; // Done moving
+
+                            // Check for 2048 win
+                            if (grid[next.y][next.x] === 2048 && !hasWon && !continueAfterWin) {
+                                hasWon = true;
+                            }
+                            break;
                         } else {
-                            break; // Blocked
+                            break;
                         }
                     }
                 });
@@ -399,50 +621,96 @@
                     localStorage.setItem('2048-best', bestScore);
                     bestDisplay.innerText = bestScore;
                 }
-                addRandomTile();
-                render();
-                if (checkGameOver()) {
-                    showGameOver();
+
+                const newTile = addRandomTile();
+                render(newTile);
+
+                // Check win condition
+                if (hasWon && !continueAfterWin) {
+                    setTimeout(() => showWinModal(), 300);
+                    hasWon = false;
+                    continueAfterWin = true;
+                }
+                // Check game over
+                else if (checkGameOver()) {
+                    gameOver = true;
+                    setTimeout(() => showGameOverModal(), 300);
                 }
             }
         }
 
         function checkGameOver() {
+            // Check for empty cells
             for (let r = 0; r < 4; r++) {
                 for (let c = 0; c < 4; c++) {
                     if (grid[r][c] === 0) return false;
-                    if (c < 3 && grid[r][c] === grid[r + 1][c]) return false;
-                    if (r < 3 && grid[r][c] === grid[r + 1][c]) return false;
                 }
             }
+
+            // Check for possible merges (horizontal)
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 3; c++) {
+                    if (grid[r][c] === grid[r][c + 1]) return false;
+                }
+            }
+
+            // Check for possible merges (vertical)
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 4; c++) {
+                    if (grid[r][c] === grid[r + 1][c]) return false;
+                }
+            }
+
             return true;
         }
 
-        function showGameOver() {
-            document.getElementById('finalScore').innerText = score;
-            const gameOverTitle = document.getElementById('gameOverTitle');
-            const highScoreMsg = document.getElementById('highScoreMsg');
+        function showGameOverModal() {
+            modalIcon.textContent = '😔';
+            modalTitle.textContent = 'Game Over!';
+            modalTitle.classList.remove('win');
+            finalScoreSpan.textContent = score;
+            modalBestScore.textContent = bestScore;
 
-            if (score > parseInt(bestDisplay.innerText)) {
-                gameOverTitle.textContent = '🎉 AMAZING! 🎉';
-                highScoreMsg.style.display = 'block';
+            if (score >= bestScore && score > 0) {
+                highScoreBadge.style.display = 'inline-block';
             } else {
-                gameOverTitle.textContent = 'Game Over!';
-                highScoreMsg.style.display = 'none';
+                highScoreBadge.style.display = 'none';
             }
 
-            gameOverScreen.style.display = 'flex';
+            gameModal.style.display = 'flex';
         }
 
-        // Input
+        function showWinModal() {
+            modalIcon.textContent = '🎉';
+            modalTitle.textContent = 'You Win!';
+            modalTitle.classList.add('win');
+            finalScoreSpan.textContent = score;
+            modalBestScore.textContent = bestScore;
+
+            if (score >= bestScore) {
+                highScoreBadge.style.display = 'inline-block';
+            } else {
+                highScoreBadge.style.display = 'none';
+            }
+
+            gameModal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            gameModal.style.display = 'none';
+        }
+
+        // Keyboard Input
         document.addEventListener('keydown', e => {
-            if (e.key === 'ArrowUp') move(0);
-            else if (e.key === 'ArrowRight') move(1);
-            else if (e.key === 'ArrowDown') move(2);
-            else if (e.key === 'ArrowLeft') move(3);
+            if (gameModal.style.display === 'flex') return;
+
+            if (e.key === 'ArrowUp') { e.preventDefault(); move(0); }
+            else if (e.key === 'ArrowRight') { e.preventDefault(); move(1); }
+            else if (e.key === 'ArrowDown') { e.preventDefault(); move(2); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); move(3); }
         });
 
-        // Swipe
+        // Touch/Swipe Support
         let touchStart = { x: 0, y: 0 };
         gridContainer.addEventListener('touchstart', e => {
             touchStart.x = e.touches[0].clientX;
@@ -451,6 +719,8 @@
         });
 
         gridContainer.addEventListener('touchend', e => {
+            if (gameModal.style.display === 'flex') return;
+
             const dx = e.changedTouches[0].clientX - touchStart.x;
             const dy = e.changedTouches[0].clientY - touchStart.y;
 
@@ -461,7 +731,14 @@
             }
         });
 
-        window.addEventListener('resize', render);
+        // Close modal on outside click
+        gameModal.addEventListener('click', (e) => {
+            if (e.target === gameModal) {
+                closeModal();
+            }
+        });
+
+        window.addEventListener('resize', () => render());
 
         initGame();
     </script>
