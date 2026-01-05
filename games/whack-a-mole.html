@@ -19,11 +19,46 @@
             user-select: none;
         }
 
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
         h1 {
             font-size: 3rem;
             color: #fff;
             text-shadow: 2px 2px #33691e;
-            margin-bottom: 10px;
+            margin: 0;
+        }
+
+        .settings-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s, background 0.3s;
+            padding: 0;
+            margin: 0;
+        }
+
+        .settings-btn:hover {
+            transform: rotate(90deg) scale(1.1);
+            background: #fff;
+        }
+
+        .settings-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: #33691e;
         }
 
         .score-board {
@@ -179,12 +214,122 @@
             border-radius: 50px;
             cursor: pointer;
         }
+
+        /* Settings Modal */
+        .settings-modal .modal-content {
+            width: 350px;
+        }
+
+        .settings-title {
+            font-size: 1.8rem;
+            color: #33691e;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .settings-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background: #f5f5f5;
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+
+        .settings-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            color: #333;
+        }
+
+        .settings-label svg {
+            width: 24px;
+            height: 24px;
+            fill: #8bc34a;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 32px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 32px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 24px;
+            width: 24px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked+.toggle-slider {
+            background-color: #8bc34a;
+        }
+
+        input:checked+.toggle-slider:before {
+            transform: translateX(28px);
+        }
+
+        .close-settings-btn {
+            background: #8bc34a;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .close-settings-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(139, 195, 74, 0.4);
+        }
     </style>
 </head>
 
 <body>
 
-    <h1>Whack-a-Mole!</h1>
+    <div class="header-container">
+        <h1>Whack-a-Mole!</h1>
+        <button class="settings-btn" onclick="openSettings()" title="Settings">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+            </svg>
+        </button>
+    </div>
     <div class="score-board">Score: <span id="score">0</span> | Time: <span id="time">30</span> | Best: <span
             id="highScore">0</span></div>
 
@@ -236,6 +381,35 @@
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div class="modal-overlay settings-modal" id="settingsModal">
+        <div class="modal-content">
+            <h2 class="settings-title">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="#33691e">
+                    <path
+                        d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+                </svg>
+                Settings
+            </h2>
+
+            <div class="settings-option">
+                <span class="settings-label">
+                    <svg viewBox="0 0 24 24" id="soundIcon">
+                        <path
+                            d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                    </svg>
+                    Sound Effects
+                </span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="soundToggle" checked onchange="toggleSound()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <button class="close-settings-btn" onclick="closeSettings()">Done</button>
+        </div>
+    </div>
+
     <script>
         const holes = document.querySelectorAll('.hole');
         const scoreBoard = document.getElementById('score');
@@ -247,12 +421,167 @@
         const modalHighScoreSpan = document.getElementById('modalHighScore');
         const highScoreMsg = document.getElementById('highScoreMsg');
         const modalTitle = document.getElementById('modalTitle');
+        const settingsModal = document.getElementById('settingsModal');
+        const soundToggle = document.getElementById('soundToggle');
+        const soundIcon = document.getElementById('soundIcon');
+
         let lastHole;
         let timeUp = false;
         let score = 0;
         let timeLeft = 30;
         let timerId;
         let highScore = localStorage.getItem('whackAMoleHighScore') || 0;
+        let soundEnabled = localStorage.getItem('whackAMoleSoundEnabled') !== 'false';
+
+        // Audio Context for sound effects
+        let audioContext;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // Sound effect generators using Web Audio API
+        function playWhackSound() {
+            if (!soundEnabled) return;
+            initAudio();
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(80, audioContext.currentTime + 0.1);
+
+            gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+
+            oscillator.type = 'square';
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.15);
+        }
+
+        function playPopUpSound() {
+            if (!soundEnabled) return;
+            initAudio();
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.08);
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+            oscillator.type = 'sine';
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        function playGameStartSound() {
+            if (!soundEnabled) return;
+            initAudio();
+
+            const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+            notes.forEach((freq, i) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.12);
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + i * 0.12);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.12 + 0.2);
+
+                oscillator.type = 'sine';
+                oscillator.start(audioContext.currentTime + i * 0.12);
+                oscillator.stop(audioContext.currentTime + i * 0.12 + 0.2);
+            });
+        }
+
+        function playGameOverSound() {
+            if (!soundEnabled) return;
+            initAudio();
+
+            const notes = [392, 349.23, 329.63, 293.66]; // G4, F4, E4, D4
+            notes.forEach((freq, i) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.15);
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + i * 0.15);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.15 + 0.25);
+
+                oscillator.type = 'triangle';
+                oscillator.start(audioContext.currentTime + i * 0.15);
+                oscillator.stop(audioContext.currentTime + i * 0.15 + 0.25);
+            });
+        }
+
+        function playHighScoreSound() {
+            if (!soundEnabled) return;
+            initAudio();
+
+            const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+            notes.forEach((freq, i) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.1);
+                gainNode.gain.setValueAtTime(0.35, audioContext.currentTime + i * 0.1);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.1 + 0.3);
+
+                oscillator.type = 'sine';
+                oscillator.start(audioContext.currentTime + i * 0.1);
+                oscillator.stop(audioContext.currentTime + i * 0.1 + 0.3);
+            });
+        }
+
+        // Settings functions
+        function openSettings() {
+            settingsModal.style.display = 'flex';
+        }
+
+        function closeSettings() {
+            settingsModal.style.display = 'none';
+        }
+
+        function toggleSound() {
+            soundEnabled = soundToggle.checked;
+            localStorage.setItem('whackAMoleSoundEnabled', soundEnabled);
+            updateSoundIcon();
+
+            // Play a test sound when enabling
+            if (soundEnabled) {
+                playPopUpSound();
+            }
+        }
+
+        function updateSoundIcon() {
+            if (soundEnabled) {
+                soundIcon.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+            } else {
+                soundIcon.innerHTML = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+            }
+        }
+
+        // Initialize sound toggle state
+        soundToggle.checked = soundEnabled;
+        updateSoundIcon();
 
         // Display high score on load
         highScoreBoard.textContent = highScore;
@@ -278,6 +607,7 @@
 
             mole.classList.add('up');
             mole.classList.remove('bonked');
+            playPopUpSound();
 
             setTimeout(() => {
                 mole.classList.remove('up');
@@ -295,7 +625,11 @@
             document.getElementById('startBtn').disabled = true;
             document.getElementById('startBtn').textContent = "Playing...";
 
-            peep();
+            playGameStartSound();
+
+            setTimeout(() => {
+                peep();
+            }, 400);
 
             timerId = setInterval(() => {
                 timeLeft--;
@@ -321,9 +655,11 @@
                 highScoreBoard.textContent = highScore;
                 highScoreMsg.style.display = 'block';
                 modalTitle.textContent = '🏆 Amazing! 🏆';
+                playHighScoreSound();
             } else {
                 highScoreMsg.style.display = 'none';
                 modalTitle.textContent = "Time's Up!";
+                playGameOverSound();
             }
 
             resultModal.style.display = 'flex';
@@ -341,10 +677,18 @@
             this.classList.remove('up');
             this.classList.add('bonked');
             scoreBoard.textContent = score;
+            playWhackSound();
         }
 
         moles.forEach(mole => mole.addEventListener('click', bonk));
         moles.forEach(mole => mole.addEventListener('touchstart', bonk)); // Mobile support
+
+        // Close settings modal when clicking outside
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                closeSettings();
+            }
+        });
 
     </script>
 </body>
