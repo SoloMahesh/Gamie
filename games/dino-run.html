@@ -3,74 +3,264 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dino Run</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Dino Run - An addictive endless runner game with multiple skins">
+    <title>🦖 Dino Run</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Poppins:wght@400;600;700&display=swap"
+        rel="stylesheet">
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
         body {
+            width: 100%;
+            height: 100%;
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background: #f7f7f7;
-            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
             touch-action: none;
+            user-select: none;
         }
 
-        canvas {
-            border-bottom: 2px solid #535353;
+        .game-wrapper {
+            position: relative;
             width: 100%;
-            max-width: 800px;
-            height: 300px;
-            background: transparent;
+            height: 100%;
+            overflow: hidden;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
         }
 
-        #score {
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* HUD */
+        .hud {
             position: absolute;
             top: 20px;
+            left: 70px;
+            /* Offset for back button */
             right: 20px;
-            font-size: 24px;
-            color: #535353;
-            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+            z-index: 10;
         }
 
-        #gameOver {
+        .score-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            font-weight: 700;
+            color: #2C3E50;
+        }
+
+        .score-value {
+            font-size: 28px;
+            color: #FF6B35;
+        }
+
+        .high-score {
+            font-size: 14px;
+            color: #FFD93D;
+            margin-top: 5px;
+        }
+
+        .current-skin-display {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 8px 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 24px;
+        }
+
+        /* Buttons */
+        .back-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, background 0.3s;
+            z-index: 50;
+            pointer-events: all;
+        }
+
+        .back-btn:hover {
+            transform: scale(1.1);
+            background: #fff;
+        }
+
+        .back-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: #2C3E50;
+        }
+
+        /* Main Menu */
+        .menu-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.95) 0%, rgba(76, 175, 80, 0.95) 100%);
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 10;
+            z-index: 100;
+            transition: opacity 0.3s;
         }
 
-        button {
-            padding: 10px 20px;
-            font-size: 1.5rem;
-            background: #535353;
-            color: white;
+        .menu-overlay.hidden {
+            display: none;
+        }
+
+        .game-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 72px;
+            color: #fff;
+            text-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+            animation: titleBounce 2s ease-in-out infinite;
+        }
+
+        @keyframes titleBounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .menu-dino {
+            font-size: 80px;
+            animation: dinoBounce 1s ease-in-out infinite;
+        }
+
+        @keyframes dinoBounce {
+
+            0%,
+            100% {
+                transform: rotate(-5deg);
+            }
+
+            50% {
+                transform: rotate(5deg);
+            }
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: 700;
+            background: #fff;
+            color: #FF6B35;
             border: none;
-            border-radius: 5px;
+            border-radius: 50px;
             cursor: pointer;
-            margin-top: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            min-width: 250px;
         }
 
-        .instructions {
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .btn.secondary {
+            background: rgba(255, 255, 255, 0.9);
+            color: #4CAF50;
+        }
+
+        /* Modals */
+        .modal-overlay {
             position: absolute;
-            bottom: 50px;
-            color: #999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 20px;
         }
 
-        @keyframes popIn {
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #fff 0%, #f8f8f8 100%);
+            padding: 30px;
+            border-radius: 25px;
+            max-width: 800px;
+            /* Wider for skins */
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        @keyframes modalPop {
             0% {
-                transform: scale(0);
+                transform: scale(0.5);
                 opacity: 0;
             }
 
@@ -80,198 +270,988 @@
             }
         }
 
-        #finalScore {
-            display: inline-block;
+        .modal-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 36px;
+            color: #FF6B35;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Skins Grid */
+        .skins-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 15px;
+            width: 100%;
+            margin: 20px 0;
+        }
+
+        .skin-card {
+            background: #f0f0f0;
+            border-radius: 15px;
+            padding: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, border 0.2s;
+            border: 3px solid transparent;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .skin-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .skin-card.selected {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+        }
+
+        .skin-emoji {
+            font-size: 48px;
+        }
+
+        .skin-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        /* Game Over Modal */
+        .game-over-content {
+            text-align: center;
+        }
+
+        .game-over-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 48px;
+            color: #FF6B35;
+            margin-bottom: 15px;
+        }
+
+        .new-record {
+            color: #FFD93D;
+            font-size: 24px;
+            margin: 15px 0;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .final-score {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2C3E50;
+            margin: 15px 0;
+        }
+
+        .best-score {
+            font-size: 18px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        /* Settings */
+        .settings-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        .settings-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 56px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 30px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked+.toggle-slider {
+            background-color: #4CAF50;
+        }
+
+        input:checked+.toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .game-wrapper {
+                height: 400px;
+            }
+
+            .game-title {
+                font-size: 48px;
+            }
+
+            .menu-dino {
+                font-size: 60px;
+            }
+
+            .btn {
+                min-width: 200px;
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-wrapper {
+                height: 350px;
+                border-radius: 0;
+            }
+
+            .skins-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
 
 <body>
-    <div id="score">00000 | <span style="color: #FFD700;">Best: <span id="highScore">00000</span></span></div>
-    <canvas id="gameCanvas"></canvas>
+    <div class="game-wrapper">
+        <!-- Back Button -->
+        <a href="../index.html" class="back-btn" title="Back to Games">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+            </svg>
+        </a>
 
-    <div id="gameOver">
-        <h1 id="gameOverTitle" style="color: white;">GAME OVER</h1>
-        <p id="highScoreMsg" style="color: #FFD700; font-size: 1.5rem; display: none;">🏆 NEW HIGH SCORE! 🏆</p>
-        <p style="color: white; font-size: 24px; margin: 10px 0;">Score: <span id="finalScore">0</span></p>
-        <p style="color: #ccc; font-size: 1rem;">Best: <span id="modalHighScore">00000</span></p>
-        <button onclick="resetGame()">Restart</button>
+        <!-- HUD -->
+        <div class="hud">
+            <div class="score-panel">
+                <div class="score-value" id="scoreDisplay">00000</div>
+                <div class="high-score">🏆 Best: <span id="highScoreDisplay">00000</span></div>
+            </div>
+            <div class="current-skin-display">
+                <span id="skinIcon">🦖</span>
+            </div>
+        </div>
+
+        <!-- Game Canvas -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Main Menu -->
+        <div class="menu-overlay" id="mainMenu">
+            <div class="menu-dino">🦖</div>
+            <h1 class="game-title">DINO RUN</h1>
+            <div class="menu-buttons">
+                <button class="btn" onclick="startGame()">🎮 Start Game</button>
+                <button class="btn secondary" onclick="openSkins()">🎨 Choose Skin</button>
+                <button class="btn secondary" onclick="openSettings()">⚙️ Settings</button>
+            </div>
+        </div>
+
+        <!-- Skins Modal -->
+        <div class="modal-overlay" id="skinsModal">
+            <div class="modal-content">
+                <h2 class="modal-title">Choose Your Dino</h2>
+                <div class="skins-grid" id="skinsGrid"></div>
+                <button class="btn" onclick="closeSkins()">Done</button>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div class="modal-overlay" id="settingsModal">
+            <div class="modal-content">
+                <h2 class="modal-title">Settings</h2>
+                <div class="settings-option">
+                    <span class="settings-label">🔊 Sound Effects</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="soundToggle" checked onchange="toggleSound()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-option">
+                    <span class="settings-label">🎵 Background Music</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="musicToggle" checked onchange="toggleMusic()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <button class="btn" onclick="closeSettings()">Done</button>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div class="modal-overlay" id="gameOverModal">
+            <div class="modal-content game-over-content">
+                <h2 class="game-over-title" id="gameOverTitle">GAME OVER</h2>
+                <div class="new-record" id="newRecord" style="display: none;">🏆 NEW HIGH SCORE! 🏆</div>
+                <div class="final-score">Score: <span id="finalScore">0</span></div>
+                <div class="best-score">Best: <span id="bestScore">0</span></div>
+                <div class="modal-buttons">
+                    <button class="btn" onclick="restartGame()">🔄 Play Again</button>
+                    <button class="btn secondary" onclick="backToMenu()">📋 Menu</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="instructions">Tap or Space to Jump</div>
-
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-
-        // Logical size
-        const width = 800;
-        const height = 300;
-        canvas.width = width;
-        canvas.height = height;
-
-        let gameSpeed = 5;
-        let score = 0;
-        let highScore = localStorage.getItem('dinoRunHighScore') || 0;
-        let gameRunning = false;
-        let frame = 0;
-
-        const dino = {
-            x: 50,
-            y: height - 40,
-            w: 40,
-            h: 40,
-            dy: 0,
-            jumpForce: 12,
-            grounded: true,
-
-            draw: function () {
-                ctx.fillStyle = "#535353";
-                ctx.fillRect(this.x, this.y, this.w, this.h);
-                // Eye
-                ctx.fillStyle = "white";
-                ctx.fillRect(this.x + 25, this.y + 5, 5, 5);
-            },
-
-            jump: function () {
-                if (this.grounded) {
-                    this.dy = -this.jumpForce;
-                    this.grounded = false;
-                }
-            },
-
-            update: function () {
-                // Gravity
-                this.y += this.dy;
-                if (this.y < height - 40) {
-                    this.dy += 0.6;
-                    this.grounded = false;
-                } else {
-                    this.y = height - 40;
-                    this.dy = 0;
-                    this.grounded = true;
-                }
+        // ========== CONFIGURATION ==========
+        const CONFIG = {
+            canvas: { width: 900, height: 500 },
+            physics: { gravity: 0.7, jumpForce: 14 },
+            game: {
+                baseSpeed: 6,
+                speedIncrease: 0.003,
+                obstacleFrequency: 90
             }
         };
 
-        let obstacles = [];
+        // ========== SKINS DATA ==========
+        // ========== SKINS DATA ==========
+        const SKINS = {
+            classicRex: {
+                name: "Classic",
+                colors: { body: "#4CAF50", belly: "#81C784", spots: "#388E3C" },
+                accessories: [],
+                particles: ["💥", "⭐", "✨"]
+            },
+            roboDino: {
+                name: "Robo-Dino",
+                colors: { body: "#90A4AE", belly: "#B0BEC5", spots: "#607D8B" },
+                accessories: ["visor"],
+                particles: ["⚡", "⚙️", "🔧"]
+            },
+            royalRex: {
+                name: "Royal",
+                colors: { body: "#FFD700", belly: "#FFF59D", spots: "#FBC02D" },
+                accessories: ["crown"],
+                particles: ["💎", "👑", "✨"]
+            },
+            flameRex: {
+                name: "Blaze",
+                colors: { body: "#F44336", belly: "#FF8A65", spots: "#D32F2F" },
+                accessories: ["spikes"],
+                particles: ["🔥", "💥", "🌋"]
+            },
+            iceDino: {
+                name: "Glacier",
+                colors: { body: "#00BCD4", belly: "#4DD0E1", spots: "#0097A7" },
+                accessories: ["scarf"],
+                particles: ["❄️", "⛄", "💎"]
+            },
+            shadowRex: {
+                name: "Shadow",
+                colors: { body: "#263238", belly: "#455A64", spots: "#102027" },
+                accessories: ["ninjaMask"],
+                particles: ["💨", "🌑", "⚔️"]
+            }
+        };
 
-        function spawnObstacle() {
-            let size = Math.random() * 20 + 20; // 20-40
-            let type = Math.random() > 0.5 ? 1 : 2; // 1 cactus, 2 cactus
-            let obs = {
-                x: width,
-                y: height - size,
-                w: type === 1 ? 20 : 40,
-                h: size,
-                type: type
-            };
-            obstacles.push(obs);
+        // ========== GAME STATE ==========
+        let canvas, ctx;
+        let gameState = 'menu'; // menu, playing, paused, gameOver
+        let currentSkin = localStorage.getItem('dinoRunSkin') || 'classicRex';
+        let soundEnabled = localStorage.getItem('dinoRunSound') !== 'false';
+        let musicEnabled = localStorage.getItem('dinoRunMusic') !== 'false';
+        let highScore = parseInt(localStorage.getItem('dinoRunHighScore')) || 0;
+
+        let score = 0;
+        let gameSpeed = CONFIG.game.baseSpeed;
+        let frame = 0;
+        let particles = [];
+        let obstacles = [];
+        let powerups = [];
+
+        // Player
+        let player = {
+            x: 100,
+            y: 0,
+            width: 60,  // Slightly wider for drawing
+            height: 60,
+            dy: 0,
+            grounded: false,
+            jumping: false,
+            frame: 0,
+            animSpeed: 8
+        };
+
+        // Background
+        let bgOffset = 0;
+        let cloudOffset = 0;
+        let mountainOffset = 0;
+
+        // Audio
+        let audioContext;
+
+        // ========== INITIALIZATION ==========
+        function init() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            resize();
+            window.addEventListener('resize', resize);
+
+            // Initialize audio
+            if (window.AudioContext || window.webkitAudioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            // Load saved settings
+            document.getElementById('soundToggle').checked = soundEnabled;
+            document.getElementById('musicToggle').checked = musicEnabled;
+            document.getElementById('highScoreDisplay').textContent = String(highScore).padStart(5, '0');
+            document.getElementById('skinIcon').textContent = SKINS[currentSkin].emoji;
+
+            // Generate skins grid
+            generateSkinsGrid();
+
+            // Event listeners
+            canvas.addEventListener('click', handleJump);
+            canvas.addEventListener('touchstart', handleJump, { passive: true });
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' || e.code === 'ArrowUp') {
+                    e.preventDefault();
+                    handleJump();
+                }
+            });
+
+            // Modal click outside
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                    }
+                });
+            });
+
+            gameLoop();
+        }
+
+        // ========== SKINS ==========
+        function generateSkinsGrid() {
+            const grid = document.getElementById('skinsGrid');
+            grid.innerHTML = '';
+
+            Object.keys(SKINS).forEach(key => {
+                const skin = SKINS[key];
+                const card = document.createElement('div');
+                card.className = 'skin-card' + (key === currentSkin ? ' selected' : '');
+                card.className = 'skin-card' + (key === currentSkin ? ' selected' : '');
+
+                // Canvas preview for each skin
+                const canvasPreview = document.createElement('canvas');
+                canvasPreview.width = 80;
+                canvasPreview.height = 80;
+                const pCtx = canvasPreview.getContext('2d');
+                drawDino(pCtx, 10, 10, 60, 60, SKINS[key], 0, false);
+
+                card.appendChild(canvasPreview);
+                card.innerHTML += `<div class="skin-name">${skin.name}</div>`;
+                card.onclick = () => selectSkin(key);
+                grid.appendChild(card);
+            });
+        }
+
+        function selectSkin(skinKey) {
+            currentSkin = skinKey;
+            localStorage.setItem('dinoRunSkin', skinKey);
+            generateSkinsGrid();
+            document.getElementById('skinIcon').textContent = SKINS[currentSkin].emoji;
+            playSound(440, 0.1);
+        }
+
+        // ========== MODALS ==========
+        function openSkins() {
+            document.getElementById('skinsModal').classList.add('active');
+        }
+
+        function closeSkins() {
+            document.getElementById('skinsModal').classList.remove('active');
+        }
+
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        function toggleSound() {
+            soundEnabled = document.getElementById('soundToggle').checked;
+            localStorage.setItem('dinoRunSound', soundEnabled);
+            if (soundEnabled) playSound(500, 0.1);
+        }
+
+        function toggleMusic() {
+            musicEnabled = document.getElementById('musicToggle').checked;
+            localStorage.setItem('dinoRunMusic', musicEnabled);
+        }
+
+        // ========== GAME CONTROL ==========
+        function startGame() {
+            document.getElementById('mainMenu').classList.add('hidden');
+            resetGame();
+            gameState = 'playing';
+            playSound(523, 0.1);
+            setTimeout(() => playSound(659, 0.1), 100);
+            setTimeout(() => playSound(784, 0.1), 200);
         }
 
         function resetGame() {
-            obstacles = [];
             score = 0;
-            gameSpeed = 5;
-            gameRunning = true;
-            document.getElementById('gameOver').style.display = 'none';
-            document.getElementById('highScore').innerText = String(highScore).padStart(5, '0');
-            dino.y = height - 40;
-            dino.dy = 0;
-            requestAnimationFrame(update);
+            gameSpeed = CONFIG.game.baseSpeed;
+            frame = 0;
+            obstacles = [];
+            particles = [];
+            powerups = [];
+            player.y = CONFIG.canvas.height - 100 - player.height;  // Stand ON the ground
+            player.dy = 0;
+            player.grounded = true;  // Start grounded
+            bgOffset = 0;
+            cloudOffset = 0;
+            mountainOffset = 0;
+        }
+
+        function restartGame() {
+            document.getElementById('gameOverModal').classList.remove('active');
+            resetGame();
+            gameState = 'playing';
+        }
+
+        function backToMenu() {
+            document.getElementById('gameOverModal').classList.remove('active');
+            document.getElementById('mainMenu').classList.remove('hidden');
+            gameState = 'menu';
+        }
+
+        function gameOver() {
+            gameState = 'gameOver';
+
+            // Update displays
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('bestScore').textContent = highScore;
+
+            // Check for new high score
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('dinoRunHighScore', highScore);
+                document.getElementById('highScoreDisplay').textContent = String(highScore).padStart(5, '0');
+                document.getElementById('gameOverTitle').textContent = '🎉 AMAZING! 🎉';
+                document.getElementById('newRecord').style.display = 'block';
+                playHighScoreSound();
+            } else {
+                document.getElementById('gameOverTitle').textContent = 'GAME OVER';
+                document.getElementById('newRecord').style.display = 'none';
+                playGameOverSound();
+            }
+
+            document.getElementById('gameOverModal').classList.add('active');
+        }
+
+        // ========== INPUT ==========
+        function handleJump(e) {
+            if (gameState !== 'playing') return;
+            if (e) e.preventDefault();
+
+            if (player.grounded) {
+                player.dy = -CONFIG.physics.jumpForce;
+                player.grounded = false;
+                player.jumping = true;
+                playSound(440, 0.08);
+
+                // Jump particles
+                for (let i = 0; i < 5; i++) {
+                    particles.push({
+                        x: player.x + player.width / 2,
+                        y: player.y + player.height,
+                        vx: (Math.random() - 0.5) * 4,
+                        vy: Math.random() * 2,
+                        life: 20,
+                        color: SKINS[currentSkin].colors.body,
+                        symbol: SKINS[currentSkin].particles[Math.floor(Math.random() * 3)]
+                    });
+                }
+            }
+        }
+
+        // ========== GAME LOOP ==========
+        function gameLoop() {
+            requestAnimationFrame(gameLoop);
+
+            if (gameState === 'playing') {
+                update();
+            }
+            render();
         }
 
         function update() {
-            if (!gameRunning) return;
             frame++;
 
-            ctx.clearRect(0, 0, width, height);
+            // Update player physics
+            player.y += player.dy;
+            player.dy += CONFIG.physics.gravity;
+
+            const groundY = CONFIG.canvas.height - 100 - player.height;  // Player stands ON ground
+            if (player.y >= groundY) {
+                player.y = groundY;
+                player.dy = 0;
+                if (!player.grounded) {
+                    player.grounded = true;
+                    player.jumping = false;
+                    playSound(200, 0.05);
+
+                    // Landing particles
+                    for (let i = 0; i < 3; i++) {
+                        particles.push({
+                            x: player.x + player.width / 2,
+                            y: player.y + player.height,
+                            vx: (Math.random() - 0.5) * 3,
+                            vy: -Math.random() * 2,
+                            life: 15,
+                            color: '#D2691E',
+                            symbol: '💨'
+                        });
+                    }
+                }
+            } else {
+                player.grounded = false;
+            }
+
+            // Player animation
+            if (player.grounded) {
+                player.frame++;
+            }
+
+            // Increase speed
+            gameSpeed += CONFIG.game.speedIncrease;
 
             // Spawn obstacles
-            if (frame % Math.floor(100 + Math.random() * 50) === 0) {
+            if (frame % CONFIG.game.obstacleFrequency === 0) {
                 spawnObstacle();
             }
 
-            // Dino
-            dino.update();
-            dino.draw();
+            // Update obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= gameSpeed;
 
-            // Obstacles
-            for (let i = 0; i < obstacles.length; i++) {
-                let o = obstacles[i];
-                o.x -= gameSpeed;
+                // Collision detection
+                if (checkCollision(player, obstacles[i])) {
+                    gameOver();
 
-                // Draw
-                ctx.fillStyle = "#535353";
-                ctx.fillRect(o.x, o.y, o.w, o.h);
-
-                // Collision
-                if (dino.x < o.x + o.w &&
-                    dino.x + dino.w > o.x &&
-                    dino.y < o.y + o.h &&
-                    dino.y + dino.h > o.y) {
-                    gameRunning = false;
-
-                    // Check high score
-                    const finalScoreNum = score;
-                    document.getElementById('finalScore').innerText = finalScoreNum;
-                    document.getElementById('modalHighScore').innerText = String(highScore).padStart(5, '0');
-
-                    const gameOverTitle = document.getElementById('gameOverTitle');
-                    const highScoreMsg = document.getElementById('highScoreMsg');
-
-                    if (finalScoreNum > highScore) {
-                        highScore = finalScoreNum;
-                        localStorage.setItem('dinoRunHighScore', highScore);
-                        document.getElementById('highScore').innerText = String(highScore).padStart(5, '0');
-                        document.getElementById('modalHighScore').innerText = String(highScore).padStart(5, '0');
-                        gameOverTitle.textContent = '🎉 AMAZING! 🎉';
-                        highScoreMsg.style.display = 'block';
-                    } else {
-                        gameOverTitle.textContent = 'GAME OVER';
-                        highScoreMsg.style.display = 'none';
+                    // Collision particles
+                    for (let j = 0; j < 15; j++) {
+                        particles.push({
+                            x: player.x + player.width / 2,
+                            y: player.y + player.height / 2,
+                            vx: (Math.random() - 0.5) * 10,
+                            vy: (Math.random() - 0.5) * 10,
+                            life: 30,
+                            color: SKINS[currentSkin].colors.body,
+                            symbol: SKINS[currentSkin].particles[Math.floor(Math.random() * 3)]
+                        });
                     }
-
-                    const finalScoreEl = document.getElementById('finalScore');
-                    finalScoreEl.style.animation = 'none';
-                    finalScoreEl.offsetHeight; /* trigger reflow */
-                    finalScoreEl.style.animation = 'popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-                    document.getElementById('gameOver').style.display = 'flex';
                 }
 
-                // Remove
-                if (o.x + o.w < 0) {
+                // Remove off-screen obstacles
+                if (obstacles[i].x + obstacles[i].width < 0) {
                     obstacles.splice(i, 1);
-                    i--;
                     score += 10;
+                    document.getElementById('scoreDisplay').textContent = String(score).padStart(5, '0');
                 }
             }
 
-            // Speed up
-            if (frame % 500 === 0) gameSpeed += 0.5;
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].x += particles[i].vx;
+                particles[i].y += particles[i].vy;
+                particles[i].vy += 0.2;
+                particles[i].life--;
 
-            // Score
-            document.getElementById('score').innerText = String(score).padStart(5, '0');
-
-            requestAnimationFrame(update);
-        }
-
-        // Input
-        function handleInput(e) {
-            if (e.target.tagName === 'BUTTON') return;
-            if (e.type === 'keydown') {
-                if (e.code === 'Space' || e.code === 'ArrowUp') dino.jump();
-            } else {
-                e.preventDefault();
-                dino.jump();
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
             }
+
+            // Update background
+            bgOffset += gameSpeed;
+            cloudOffset += gameSpeed * 0.3;
+            mountainOffset += gameSpeed * 0.5;
         }
 
-        document.addEventListener('keydown', handleInput);
-        document.addEventListener('touchstart', handleInput, { passive: false });
-        document.addEventListener('mousedown', handleInput);
+        function render() {
+            // Clear canvas
+            ctx.clearRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
 
-        resetGame();
+            // Draw sky gradient
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, CONFIG.canvas.height);
+            skyGradient.addColorStop(0, '#87CEEB');
+            skyGradient.addColorStop(1, '#E0F6FF');
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
+
+            // Draw clouds (parallax layer 1)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            for (let i = 0; i < 5; i++) {
+                const cloudX = ((i * 250 - cloudOffset) % (CONFIG.canvas.width + 250)) - 100;
+                drawCloud(cloudX, 50 + i * 20);
+            }
+
+            // Draw mountains (parallax layer 2)
+            ctx.fillStyle = 'rgba(139, 90, 43, 0.3)';
+            ctx.beginPath();
+            for (let i = 0; i < 10; i++) {
+                const mountainX = ((i * 150 - mountainOffset) % (CONFIG.canvas.width + 150)) - 100;
+                ctx.moveTo(mountainX, CONFIG.canvas.height - 80);
+                ctx.lineTo(mountainX + 75, CONFIG.canvas.height - 180);
+                ctx.lineTo(mountainX + 150, CONFIG.canvas.height - 80);
+            }
+            ctx.fill();
+
+            // Draw ground
+            const groundY = CONFIG.canvas.height - 100;
+            const groundGradient = ctx.createLinearGradient(0, groundY, 0, CONFIG.canvas.height);
+            groundGradient.addColorStop(0, '#D2691E');
+            groundGradient.addColorStop(1, '#8B4513');
+            ctx.fillStyle = groundGradient;
+            ctx.fillRect(0, groundY, CONFIG.canvas.width, 100);
+
+            // Draw ground texture
+            ctx.strokeStyle = 'rgba(139, 69, 19, 0.3)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < CONFIG.canvas.width; i += 20) {
+                const x = (i - bgOffset % 20);
+                ctx.beginPath();
+                ctx.moveTo(x, groundY);
+                ctx.lineTo(x, CONFIG.canvas.height);
+                ctx.stroke();
+            }
+
+            // Draw ground decorations
+            for (let i = 0; i < 15; i++) {
+                const decoX = ((i * 80 - bgOffset) % (CONFIG.canvas.width + 80)) - 40;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(decoX, groundY + 20, 3, 10);
+            }
+
+            // Draw obstacles
+            obstacles.forEach(obs => {
+                drawCactus(ctx, obs.x, obs.y, obs.width, obs.height);
+            });
+
+            // Draw player
+            if (gameState === 'playing') {
+                const skin = SKINS[currentSkin];
+
+                // Draw Dino Sprite
+                drawDino(ctx, player.x, player.y, player.width, player.height, skin, frame, player.grounded);
+
+                // Running dust when grounded
+                if (player.grounded && frame % 5 === 0) {
+                    particles.push({
+                        x: player.x,
+                        y: player.y + player.height,
+                        vx: -gameSpeed * 0.3,
+                        vy: -1,
+                        life: 10,
+                        color: '#D2691E',
+                        symbol: '💨'
+                    });
+                }
+            }
+
+            // Draw particles
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life / 30;
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(p.symbol, p.x, p.y);
+            });
+            ctx.globalAlpha = 1.0;
+        }
+
+        function drawCactus(context, x, y, w, h) {
+            context.fillStyle = '#2E7D32';
+            context.strokeStyle = '#1B5E20';
+            context.lineWidth = 2;
+
+            // Main body
+            context.beginPath();
+            context.roundRect(x, y, w, h, 10);
+            context.fill();
+            context.stroke();
+
+            // Spikes
+            context.fillStyle = '#fff';
+            for (let i = y + 5; i < y + h; i += 15) {
+                // Left spikes
+                context.beginPath();
+                context.moveTo(x, i);
+                context.lineTo(x - 3, i + 5);
+                context.lineTo(x, i + 10);
+                context.fill();
+
+                // Right spikes
+                context.beginPath();
+                context.moveTo(x + w, i);
+                context.lineTo(x + w + 3, i + 5);
+                context.lineTo(x + w, i + 10);
+                context.fill();
+            }
+
+            // Arms (randomly added based on height/width for variety) could be added here, 
+            // but for now keeping it simple to match hitbox.
+
+            // Detail lines
+            context.strokeStyle = '#388E3C';
+            context.beginPath();
+            context.moveTo(x + w / 2, y + 5);
+            context.lineTo(x + w / 2, y + h - 5);
+            context.stroke();
+        }
+
+        function drawCloud(x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, Math.PI * 2);
+            ctx.arc(x + 25, y, 25, 0, Math.PI * 2);
+            ctx.arc(x + 50, y, 20, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function spawnObstacle() {
+            const types = ['small', 'medium', 'large'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const heights = { small: 30, medium: 45, large: 60 };
+            const widths = { small: 15, medium: 20, large: 25 };
+
+            obstacles.push({
+                x: CONFIG.canvas.width,
+                y: CONFIG.canvas.height - 100 - heights[type],
+                width: widths[type],
+                height: heights[type],
+                type: type
+            });
+        }
+
+        function drawDino(context, x, y, w, h, skinInfo, frameCount, isGrounded) {
+            const colors = skinInfo.colors;
+
+            context.save();
+
+            // Animation State
+            const runAnim = isGrounded ? Math.sin(frameCount * 0.3) * 10 : 0; // Leg movement
+            const breathAnim = isGrounded ? Math.sin(frameCount * 0.1) * 2 : 0; // Breathing
+
+            // Body
+            context.fillStyle = colors.body;
+            context.beginPath();
+            context.ellipse(x + w / 2, y + h / 2 + breathAnim, w / 2, h / 2 - 5, 0, 0, Math.PI * 2);
+            context.fill();
+
+            // Spots
+            context.fillStyle = colors.spots;
+            context.beginPath();
+            context.arc(x + w * 0.3, y + h * 0.4 + breathAnim, w * 0.1, 0, Math.PI * 2);
+            context.arc(x + w * 0.7, y + h * 0.6 + breathAnim, w * 0.08, 0, Math.PI * 2);
+            context.fill();
+
+            // Belly (Lighter area)
+            context.fillStyle = colors.belly;
+            context.beginPath();
+            context.ellipse(x + w / 2, y + h / 2 + 10 + breathAnim, w / 3, h / 4, 0, 0, Math.PI * 2);
+            context.fill();
+
+            // Head
+            context.fillStyle = colors.body;
+            context.beginPath();
+            context.arc(x + w * 0.8, y + h * 0.3 + breathAnim, w * 0.3, 0, Math.PI * 2);
+            context.fill();
+
+            // Eye
+            context.fillStyle = "white";
+            context.beginPath();
+            context.arc(x + w * 0.85, y + h * 0.25 + breathAnim, w * 0.08, 0, Math.PI * 2);
+            context.fill();
+            context.fillStyle = "black";
+            context.beginPath();
+            context.arc(x + w * 0.88, y + h * 0.25 + breathAnim, w * 0.03, 0, Math.PI * 2);
+            context.fill();
+
+            // Legs (Animated)
+            context.lineWidth = 6;
+            context.strokeStyle = colors.spots;
+            context.lineCap = "round";
+
+            // Left Leg
+            context.beginPath();
+            context.moveTo(x + w * 0.4, y + h * 0.8);
+            context.quadraticCurveTo(x + w * 0.4, y + h, x + w * 0.4 - runAnim, y + h);
+            context.stroke();
+
+            // Right Leg
+            context.beginPath();
+            context.moveTo(x + w * 0.6, y + h * 0.8);
+            context.quadraticCurveTo(x + w * 0.6, y + h, x + w * 0.6 + runAnim, y + h);
+            context.stroke();
+
+            // Tail
+            context.fillStyle = colors.body;
+            context.beginPath();
+            context.moveTo(x + w * 0.2, y + h * 0.5);
+            context.quadraticCurveTo(x - 10, y + h * 0.6, x + w * 0.1, y + h * 0.8);
+            context.lineTo(x + w * 0.3, y + h * 0.7);
+            context.fill();
+
+            // Accessories
+            if (skinInfo.accessories.includes("crown")) {
+                context.fillStyle = "#FFD700"; // Gold
+                context.beginPath();
+                context.moveTo(x + w * 0.7, y + h * 0.1 + breathAnim);
+                context.lineTo(x + w * 0.8, y - 10 + breathAnim);
+                context.lineTo(x + w * 0.9, y + h * 0.1 + breathAnim);
+                context.lineTo(x + w * 1.0, y - 10 + breathAnim);
+                context.lineTo(x + w * 0.9, y + h * 0.25 + breathAnim);
+                context.closePath();
+                context.fill();
+                context.strokeStyle = "#DAA520";
+                context.stroke();
+            }
+            if (skinInfo.accessories.includes("visor")) {
+                context.fillStyle = "cyan";
+                context.globalAlpha = 0.6;
+                context.beginPath();
+                context.rect(x + w * 0.75, y + h * 0.2 + breathAnim, w * 0.25, h * 0.1);
+                context.fill();
+                context.globalAlpha = 1.0;
+            }
+            if (skinInfo.accessories.includes("ninjaMask")) {
+                context.fillStyle = "#D32F2F";
+                context.beginPath();
+                context.rect(x + w * 0.75, y + h * 0.2 + breathAnim, w * 0.3, h * 0.08);
+                context.fill();
+                // Ties flying back
+                context.beginPath();
+                context.moveTo(x + w * 0.75, y + h * 0.25 + breathAnim);
+                context.quadraticCurveTo(x + w * 0.5, y + h * 0.1, x + w * 0.3, y + h * 0.15);
+                context.stroke();
+            }
+
+            context.restore();
+        }
+
+        function checkCollision(rect1, rect2) {
+            // Add some padding for more forgiving collision
+            const padding = 12; // More padding for sprite shapes
+            return rect1.x + padding < rect2.x + rect2.width &&
+                rect1.x + rect1.width - padding > rect2.x &&
+                rect1.y + padding < rect2.y + rect2.height &&
+                rect1.y + rect1.height - padding > rect2.y;
+        }
+
+        // ========== AUDIO ==========
+        function playSound(frequency, duration) {
+            if (!soundEnabled || !audioContext) return;
+
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            osc.type = 'square';
+
+            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+
+            osc.start();
+            osc.stop(audioContext.currentTime + duration);
+        }
+
+        function playGameOverSound() {
+            if (!soundEnabled) return;
+            [392, 349, 330, 294].forEach((freq, i) => {
+                setTimeout(() => playSound(freq, 0.25), i * 150);
+            });
+        }
+
+        function playHighScoreSound() {
+            if (!soundEnabled) return;
+            [523, 659, 784, 1047].forEach((freq, i) => {
+                setTimeout(() => playSound(freq, 0.2), i * 100);
+            });
+        }
+
+        // ========== START ==========
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // Sync CONFIG with new canvas size
+            CONFIG.canvas.width = window.innerWidth;
+            CONFIG.canvas.height = window.innerHeight;
+
+            // Update ground position based on new height
+            player.y = canvas.height - 100 - player.height;
+        }
+
+        window.addEventListener('load', init);
     </script>
 </body>
 
