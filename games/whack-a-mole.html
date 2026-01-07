@@ -3,42 +3,52 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Whack-a-Mole</title>
     <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
             font-family: 'Segoe UI', sans-serif;
             text-align: center;
-            background: #8bc34a;
+            background: linear-gradient(135deg, #8bc34a 0%, #689f38 50%, #558b2f 100%);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             margin: 0;
+            padding: clamp(10px, 2vh, 20px);
             user-select: none;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
 
         .header-container {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 15px;
-            margin-bottom: 10px;
+            gap: clamp(8px, 2vw, 15px);
+            margin-bottom: clamp(5px, 1.5vh, 15px);
+            flex-wrap: wrap;
         }
 
         h1 {
-            font-size: 3rem;
+            font-size: clamp(1.5rem, 6vw, 3rem);
             color: #fff;
             text-shadow: 2px 2px #33691e;
             margin: 0;
         }
 
-        .settings-btn {
+        .header-btn {
             background: rgba(255, 255, 255, 0.9);
             border: none;
-            width: 45px;
-            height: 45px;
+            width: clamp(38px, 10vw, 50px);
+            height: clamp(38px, 10vw, 50px);
             border-radius: 50%;
             cursor: pointer;
             display: flex;
@@ -50,134 +60,451 @@
             margin: 0;
         }
 
-        .settings-btn:hover {
-            transform: rotate(90deg) scale(1.1);
+        .header-btn:hover,
+        .header-btn:active {
+            transform: scale(1.1);
             background: #fff;
         }
 
-        .settings-btn svg {
-            width: 24px;
-            height: 24px;
+        .settings-btn:hover {
+            transform: rotate(90deg) scale(1.1);
+        }
+
+        .header-btn svg {
+            width: clamp(20px, 5vw, 28px);
+            height: clamp(20px, 5vw, 28px);
             fill: #33691e;
         }
 
         .score-board {
-            font-size: 1.5rem;
+            font-size: clamp(0.9rem, 3.5vw, 1.5rem);
             color: #fff;
             background: rgba(0, 0, 0, 0.3);
-            padding: 10px 20px;
+            padding: clamp(8px, 2vw, 15px) clamp(12px, 4vw, 25px);
             border-radius: 20px;
-            margin-bottom: 20px;
+            margin-bottom: clamp(10px, 2vh, 20px);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: clamp(8px, 3vw, 20px);
+        }
+
+        .score-item {
+            white-space: nowrap;
+        }
+
+        .combo-display {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: clamp(3rem, 15vw, 6rem);
+            font-weight: bold;
+            color: #ff6f00;
+            text-shadow: 3px 3px 0 #fff, -1px -1px 0 #fff;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0;
+            transition: none;
+        }
+
+        .combo-display.show {
+            animation: comboPopAnim 0.5s ease-out forwards;
+        }
+
+        @keyframes comboPopAnim {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 1;
+            }
+
+            20% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        .streak-bar {
+            width: min(90vw, 400px);
+            height: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            margin-bottom: clamp(10px, 2vh, 15px);
+            overflow: hidden;
+        }
+
+        .streak-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff9800, #ff5722, #e91e63);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            flex: 1;
         }
 
         .game-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            width: 90vw;
-            max-width: 600px;
+            gap: clamp(8px, 2.5vw, 20px);
+            width: min(95vw, 450px);
+            max-width: 100%;
             aspect-ratio: 1;
-            /* Keep square */
         }
 
         .hole {
-            background: #795548;
+            background: radial-gradient(ellipse at center, #5d4037 0%, #4e342e 60%, #3e2723 100%);
             border-radius: 50%;
             position: relative;
             overflow: hidden;
-            box-shadow: inset 0 10px 20px rgba(0, 0, 0, 0.5);
+            box-shadow: inset 0 8px 20px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.3);
             aspect-ratio: 1;
+            cursor: pointer;
+            min-width: 0;
+            min-height: 0;
         }
 
+        /* Shadow at bottom - IMPORTANT: pointer-events: none to not block taps */
         .hole::after {
             content: '';
             display: block;
-            background: url('data:image/svg+xml;utf8,<svg width="100" height="50" xmlns="http://www.w3.org/2000/svg"><ellipse cx="50" cy="25" rx="40" ry="15" fill="rgba(0,0,0,0.2)"/></svg>') no-repeat bottom center;
-            background-size: contain;
-            width: 100%;
-            height: 20px;
+            background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.4) 0%, transparent 70%);
+            width: 80%;
+            height: 25%;
             position: absolute;
-            bottom: 5px;
+            bottom: 5%;
+            left: 10%;
             z-index: 2;
+            pointer-events: none;
+            /* FIX: Allow clicks to pass through */
         }
 
         .mole {
             width: 70%;
-            height: 80%;
-            background: #ffb74d;
-            border-radius: 40% 40% 0 0;
+            height: 75%;
             position: absolute;
             bottom: -100%;
             left: 15%;
-            transition: bottom 0.2s;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="30" cy="40" r="5" fill="black"/><circle cx="70" cy="40" r="5" fill="black"/><ellipse cx="50" cy="60" rx="15" ry="10" fill="pink"/><path d="M40 70 Q50 80 60 70" stroke="black" fill="none"/></svg>');
-            background-size: cover;
+            transition: bottom 0.15s ease-out;
             cursor: pointer;
             z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 45% 45% 40% 40%;
+        }
+
+        .mole-inner {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(2rem, 12vw, 4rem);
+            position: relative;
         }
 
         .mole.up {
-            bottom: 0;
+            bottom: 5%;
         }
 
         .mole.bonked {
-            background-color: #ff5722;
-            animation: bonkAnim 0.1s ease-in-out;
+            animation: bonkAnim 0.15s ease-in-out;
         }
 
         @keyframes bonkAnim {
             0% {
+                transform: scale(1) rotate(0deg);
+            }
+
+            30% {
+                transform: scale(0.7) rotate(-10deg);
+            }
+
+            60% {
+                transform: scale(0.9) rotate(5deg);
+            }
+
+            100% {
+                transform: scale(1) rotate(0deg);
+                bottom: -100%;
+            }
+        }
+
+        /* Skin-specific animations */
+        .mole.skin-ninja.up {
+            animation: ninjaAppear 0.2s ease-out;
+        }
+
+        @keyframes ninjaAppear {
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            100% {
+                opacity: 1;
                 transform: scale(1);
+            }
+        }
+
+        .mole.skin-ghost.up {
+            animation: ghostAppear 0.3s ease-out;
+        }
+
+        @keyframes ghostAppear {
+            0% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 0.9;
+            }
+        }
+
+        .mole.skin-alien.up {
+            animation: alienBeam 0.25s ease-out;
+        }
+
+        @keyframes alienBeam {
+            0% {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.8);
+                filter: brightness(2);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: brightness(1);
+            }
+        }
+
+        .mole.skin-robot.up {
+            animation: robotClank 0.2s ease-out;
+        }
+
+        @keyframes robotClank {
+            0% {
+                transform: translateY(10px);
             }
 
             50% {
-                transform: scale(0.9) translateY(10px);
+                transform: translateY(-5px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        .mole.skin-dragon.up {
+            animation: dragonRise 0.25s ease-out;
+        }
+
+        @keyframes dragonRise {
+            0% {
+                transform: scale(0.8);
+                filter: brightness(1.5) saturate(1.5);
             }
 
             100% {
                 transform: scale(1);
+                filter: brightness(1) saturate(1);
             }
         }
 
-        button {
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            background: #fff;
-            color: #8bc34a;
+        .mole.skin-bunny.up {
+            animation: bunnyHop 0.2s ease-out;
+        }
+
+        @keyframes bunnyHop {
+            0% {
+                transform: translateY(20px) scale(0.9);
+            }
+
+            50% {
+                transform: translateY(-10px) scale(1.1);
+            }
+
+            100% {
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .mole.skin-golden.up {
+            animation: goldenSparkle 0.25s ease-out;
+        }
+
+        @keyframes goldenSparkle {
+            0% {
+                filter: brightness(2) saturate(2);
+                transform: scale(0.8);
+            }
+
+            100% {
+                filter: brightness(1) saturate(1);
+                transform: scale(1);
+            }
+        }
+
+        .mole.skin-zombie.up {
+            animation: zombieRise 0.3s ease-out;
+        }
+
+        @keyframes zombieRise {
+            0% {
+                transform: rotate(-15deg) translateY(10px);
+            }
+
+            50% {
+                transform: rotate(10deg) translateY(-5px);
+            }
+
+            100% {
+                transform: rotate(0deg) translateY(0);
+            }
+        }
+
+        .mole.skin-unicorn.up {
+            animation: unicornMagic 0.25s ease-out;
+        }
+
+        @keyframes unicornMagic {
+            0% {
+                filter: hue-rotate(0deg) brightness(1.5);
+                transform: scale(0.8);
+            }
+
+            100% {
+                filter: hue-rotate(360deg) brightness(1);
+                transform: scale(1);
+            }
+        }
+
+        .mole.skin-pirate.up {
+            animation: pirateAppear 0.2s ease-out;
+        }
+
+        @keyframes pirateAppear {
+            0% {
+                transform: translateX(-10px) rotate(-10deg);
+            }
+
+            50% {
+                transform: translateX(5px) rotate(5deg);
+            }
+
+            100% {
+                transform: translateX(0) rotate(0deg);
+            }
+        }
+
+        /* Particle effects */
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            font-size: clamp(1rem, 4vw, 2rem);
+            z-index: 100;
+            animation: particleFly 0.6s ease-out forwards;
+        }
+
+        @keyframes particleFly {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(var(--tx), var(--ty)) scale(0.5);
+            }
+        }
+
+        /* Screen shake */
+        .shake {
+            animation: screenShake 0.3s ease-out;
+        }
+
+        @keyframes screenShake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        button.game-btn {
+            padding: clamp(10px, 3vw, 15px) clamp(20px, 6vw, 35px);
+            font-size: clamp(1rem, 4vw, 1.3rem);
+            background: linear-gradient(135deg, #fff 0%, #f5f5f5 100%);
+            color: #558b2f;
             border: none;
             border-radius: 50px;
             cursor: pointer;
             font-weight: bold;
-            margin-top: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            margin-top: clamp(10px, 3vh, 25px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
+            transition: transform 0.2s, box-shadow 0.2s;
+            min-width: 140px;
         }
 
-        button:hover {
+        button.game-btn:hover,
+        button.game-btn:active {
             transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
         }
 
-        /* Custom Modal */
+        button.game-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Modal Styles */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 100;
+            padding: 15px;
         }
 
         .modal-content {
-            background: white;
-            padding: 30px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
+            padding: clamp(20px, 5vw, 35px);
             border-radius: 20px;
             text-align: center;
-            max-width: 90%;
-            width: 400px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            max-width: 95%;
+            width: 420px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
@@ -194,36 +521,44 @@
         }
 
         .modal-title {
-            font-size: 2rem;
+            font-size: clamp(1.5rem, 6vw, 2.2rem);
             color: #33691e;
             margin-bottom: 10px;
         }
 
         .modal-score {
-            font-size: 1.5rem;
+            font-size: clamp(1.1rem, 4vw, 1.5rem);
             color: #555;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .modal-btn {
-            background: #8bc34a;
+            background: linear-gradient(135deg, #8bc34a 0%, #7cb342 100%);
             color: white;
             border: none;
-            padding: 10px 25px;
-            font-size: 1.2rem;
+            padding: clamp(10px, 3vw, 14px) clamp(20px, 5vw, 30px);
+            font-size: clamp(1rem, 4vw, 1.2rem);
             border-radius: 50px;
             cursor: pointer;
+            margin: 5px;
+            transition: transform 0.2s;
+            font-weight: 600;
         }
 
-        /* Settings Modal */
-        .settings-modal .modal-content {
-            width: 350px;
+        .modal-btn:hover,
+        .modal-btn:active {
+            transform: scale(1.05);
         }
 
+        .modal-btn.secondary {
+            background: linear-gradient(135deg, #78909c 0%, #607d8b 100%);
+        }
+
+        /* Settings & Skins Modal */
         .settings-title {
-            font-size: 1.8rem;
+            font-size: clamp(1.4rem, 5vw, 1.8rem);
             color: #33691e;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -234,31 +569,32 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 15px 20px;
+            padding: clamp(12px, 3vw, 18px) clamp(15px, 4vw, 22px);
             background: #f5f5f5;
             border-radius: 15px;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .settings-label {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 1.1rem;
+            font-size: clamp(0.95rem, 3.5vw, 1.1rem);
             color: #333;
         }
 
         .settings-label svg {
-            width: 24px;
-            height: 24px;
+            width: clamp(20px, 5vw, 26px);
+            height: clamp(20px, 5vw, 26px);
             fill: #8bc34a;
         }
 
         /* Toggle Switch */
         .toggle-switch {
             position: relative;
-            width: 60px;
-            height: 32px;
+            width: 56px;
+            height: 30px;
+            flex-shrink: 0;
         }
 
         .toggle-switch input {
@@ -276,14 +612,14 @@
             bottom: 0;
             background-color: #ccc;
             transition: 0.3s;
-            border-radius: 32px;
+            border-radius: 30px;
         }
 
         .toggle-slider:before {
             position: absolute;
             content: "";
-            height: 24px;
-            width: 24px;
+            height: 22px;
+            width: 22px;
             left: 4px;
             bottom: 4px;
             background-color: white;
@@ -297,92 +633,182 @@
         }
 
         input:checked+.toggle-slider:before {
-            transform: translateX(28px);
+            transform: translateX(26px);
         }
 
-        .close-settings-btn {
-            background: #8bc34a;
+        /* Skin Selection */
+        .skin-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+            max-height: 280px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .skin-card {
+            background: #f0f0f0;
+            border-radius: 15px;
+            padding: clamp(8px, 2vw, 12px);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, border 0.2s;
+            border: 3px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .skin-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .skin-card.selected {
+            border-color: #8bc34a;
+            background: #e8f5e9;
+        }
+
+        .skin-emoji {
+            font-size: clamp(2rem, 8vw, 2.8rem);
+            line-height: 1;
+        }
+
+        .skin-name {
+            font-size: clamp(0.65rem, 2.5vw, 0.8rem);
+            color: #555;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .close-modal-btn {
+            background: linear-gradient(135deg, #8bc34a 0%, #7cb342 100%);
             color: white;
             border: none;
-            padding: 12px 30px;
-            font-size: 1.1rem;
+            padding: clamp(10px, 3vw, 14px) clamp(25px, 6vw, 35px);
+            font-size: clamp(1rem, 3.5vw, 1.1rem);
             border-radius: 50px;
             cursor: pointer;
-            margin-top: 10px;
-            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 15px;
+            transition: transform 0.2s;
+            font-weight: 600;
         }
 
-        .close-settings-btn:hover {
+        .close-modal-btn:hover {
             transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(139, 195, 74, 0.4);
+        }
+
+        .high-score-msg {
+            color: #ff6f00;
+            font-size: clamp(1rem, 4vw, 1.3rem);
+            margin: 10px 0;
+            animation: celebrateAnim 0.5s ease infinite alternate;
+        }
+
+        @keyframes celebrateAnim {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(1.05);
+            }
+        }
+
+        /* Back button */
+        .back-btn {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 50;
+        }
+
+        /* Responsive adjustments */
+        @media (max-height: 600px) {
+            .game-grid {
+                width: min(85vw, 350px);
+            }
+
+            h1 {
+                font-size: clamp(1.2rem, 5vw, 2rem);
+            }
+        }
+
+        @media (max-width: 360px) {
+            .score-board {
+                font-size: 0.85rem;
+                padding: 8px 12px;
+            }
+
+            .game-grid {
+                gap: 6px;
+            }
         }
     </style>
 </head>
 
 <body>
+    <a href="../index.html" class="back-btn header-btn" title="Back to Games">
+        <svg viewBox="0 0 24 24">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+        </svg>
+    </a>
 
     <div class="header-container">
-        <h1>Whack-a-Mole!</h1>
-        <button class="settings-btn" onclick="openSettings()" title="Settings">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <h1>🔨 Whack-a-Mole!</h1>
+        <button class="header-btn" onclick="openSkins()" title="Skins">
+            <svg viewBox="0 0 24 24">
+                <path
+                    d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
+            </svg>
+        </button>
+        <button class="header-btn settings-btn" onclick="openSettings()" title="Settings">
+            <svg viewBox="0 0 24 24">
                 <path
                     d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
             </svg>
         </button>
     </div>
-    <div class="score-board">Score: <span id="score">0</span> | Time: <span id="time">30</span> | Best: <span
-            id="highScore">0</span></div>
 
-    <div class="game-grid">
-        <div class="hole">
-            <div class="mole"></div>
-        </div>
-        <div class="hole">
-            <div class="mole"></div>
-        </div>
-        <div class="hole">
-            <div class="mole"></div>
-        </div>
-        <div class="hole">
-            <div class="mole"></div>
-        </div>
-        <div class="hole">
-            <div class="mole"></div>
-        </div>
-        <div class="hole">
-            <div class="mole"></div>
-        </div>
-        <div class="hole">
-            <div class="mole"></div>
-        </div>
-        <div class="hole">
-            <div class="mole"></div>
-        </div>
-        <div class="hole">
-            <div class="mole"></div>
-        </div>
+    <div class="score-board">
+        <span class="score-item">🎯 <span id="score">0</span></span>
+        <span class="score-item">⏱️ <span id="time">30</span>s</span>
+        <span class="score-item">🔥 <span id="combo">0</span>x</span>
+        <span class="score-item">🏆 <span id="highScore">0</span></span>
     </div>
 
-    <button onclick="startGame()" id="startBtn">Start Game</button>
+    <div class="streak-bar">
+        <div class="streak-fill" id="streakFill"></div>
+    </div>
 
+    <div class="combo-display" id="comboDisplay"></div>
+
+    <div class="game-container">
+        <div class="game-grid" id="gameGrid">
+            <!-- Holes will be generated by JS -->
+        </div>
+        <button class="game-btn" onclick="startGame()" id="startBtn">🎮 Start Game</button>
+    </div>
+
+    <!-- Result Modal -->
     <div class="modal-overlay" id="resultModal">
         <div class="modal-content">
-            <h2 class="modal-title" id="modalTitle">Time's Up!</h2>
-            <div class="modal-score">Final Score: <span id="finalScore">0</span></div>
-            <div class="modal-score" id="highScoreMsg"
-                style="display: none; color: #8bc34a; font-size: 1.2rem; margin-top: 10px;">🎉 New High Score! 🎉</div>
-            <div class="modal-score" style="font-size: 1rem; color: #777; margin-top: 5px;">Best: <span
-                    id="modalHighScore">0</span></div>
-            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
-                <button class="modal-btn" onclick="closeModal()">Close</button>
-                <button class="modal-btn" style="background: #8bc34a;" onclick="closeModal(); startGame();">Play
-                    Again</button>
+            <h2 class="modal-title" id="modalTitle">⏰ Time's Up!</h2>
+            <div class="modal-score">Final Score: <strong id="finalScore">0</strong></div>
+            <div class="modal-score">Max Combo: <strong id="finalCombo">0</strong>x</div>
+            <div class="high-score-msg" id="highScoreMsg" style="display: none;">🎉 NEW HIGH SCORE! 🎉</div>
+            <div class="modal-score" style="font-size: 0.9em; color: #888;">Best: <span id="modalHighScore">0</span>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px;">
+                <button class="modal-btn secondary" onclick="closeModal()">Close</button>
+                <button class="modal-btn" onclick="closeModal(); startGame();">🔄 Play Again</button>
             </div>
         </div>
     </div>
 
     <!-- Settings Modal -->
-    <div class="modal-overlay settings-modal" id="settingsModal">
+    <div class="modal-overlay" id="settingsModal">
         <div class="modal-content">
             <h2 class="settings-title">
                 <svg viewBox="0 0 24 24" width="28" height="28" fill="#33691e">
@@ -406,34 +832,150 @@
                 </label>
             </div>
 
-            <button class="close-settings-btn" onclick="closeSettings()">Done</button>
+            <div class="settings-option">
+                <span class="settings-label">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M13 3c-4.97 0-9 4.03-9 9H1l4 4 4-4H6c0-3.86 3.14-7 7-7s7 3.14 7 7-3.14 7-7 7c-1.9 0-3.62-.76-4.88-1.99l-1.42 1.42C8.68 20.45 10.73 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9z" />
+                    </svg>
+                    Reset High Score
+                </span>
+                <button class="modal-btn secondary" style="padding: 8px 16px; font-size: 0.9rem;"
+                    onclick="resetHighScore()">Reset</button>
+            </div>
+
+            <button class="close-modal-btn" onclick="closeSettings()">Done</button>
+        </div>
+    </div>
+
+    <!-- Skins Modal -->
+    <div class="modal-overlay" id="skinsModal">
+        <div class="modal-content">
+            <h2 class="settings-title">
+                <span style="font-size: 1.5em;">🎨</span>
+                Choose Your Character
+            </h2>
+            <div class="skin-grid" id="skinGrid">
+                <!-- Skins will be generated by JS -->
+            </div>
+            <button class="close-modal-btn" onclick="closeSkins()">Done</button>
         </div>
     </div>
 
     <script>
-        const holes = document.querySelectorAll('.hole');
-        const scoreBoard = document.getElementById('score');
-        const timeBoard = document.getElementById('time');
-        const highScoreBoard = document.getElementById('highScore');
-        const moles = document.querySelectorAll('.mole');
-        const resultModal = document.getElementById('resultModal');
-        const finalScoreSpan = document.getElementById('finalScore');
-        const modalHighScoreSpan = document.getElementById('modalHighScore');
-        const highScoreMsg = document.getElementById('highScoreMsg');
-        const modalTitle = document.getElementById('modalTitle');
-        const settingsModal = document.getElementById('settingsModal');
-        const soundToggle = document.getElementById('soundToggle');
-        const soundIcon = document.getElementById('soundIcon');
+        // ========== SKINS DATA ==========
+        const SKINS = {
+            classic: {
+                name: "Classic Mole",
+                emoji: "🐹",
+                class: "skin-classic",
+                particles: ["💥", "⭐", "✨"],
+                bgColor: "#ffb74d"
+            },
+            ninja: {
+                name: "Ninja Mole",
+                emoji: "🥷",
+                class: "skin-ninja",
+                particles: ["💨", "⚔️", "🌀"],
+                bgColor: "#37474f"
+            },
+            alien: {
+                name: "Alien",
+                emoji: "👽",
+                class: "skin-alien",
+                particles: ["🛸", "✨", "💫"],
+                bgColor: "#81c784"
+            },
+            pirate: {
+                name: "Pirate",
+                emoji: "🏴‍☠️",
+                class: "skin-pirate",
+                particles: ["💰", "🪙", "⚓"],
+                bgColor: "#8d6e63"
+            },
+            robot: {
+                name: "Robot",
+                emoji: "🤖",
+                class: "skin-robot",
+                particles: ["⚡", "🔧", "⚙️"],
+                bgColor: "#90a4ae"
+            },
+            bunny: {
+                name: "Bunny",
+                emoji: "🐰",
+                class: "skin-bunny",
+                particles: ["🌈", "💖", "🥕"],
+                bgColor: "#f8bbd9"
+            },
+            ghost: {
+                name: "Ghost",
+                emoji: "👻",
+                class: "skin-ghost",
+                particles: ["💀", "🌙", "👀"],
+                bgColor: "#e0e0e0"
+            },
+            dragon: {
+                name: "Dragon",
+                emoji: "🐉",
+                class: "skin-dragon",
+                particles: ["🔥", "💥", "🌋"],
+                bgColor: "#ef5350"
+            },
+            golden: {
+                name: "Golden Mole",
+                emoji: "🌟",
+                class: "skin-golden",
+                particles: ["💎", "👑", "✨"],
+                bgColor: "#ffd54f"
+            },
+            zombie: {
+                name: "Zombie",
+                emoji: "🧟",
+                class: "skin-zombie",
+                particles: ["🦴", "🧠", "💀"],
+                bgColor: "#a5d6a7"
+            },
+            unicorn: {
+                name: "Unicorn",
+                emoji: "🦄",
+                class: "skin-unicorn",
+                particles: ["🌈", "⭐", "💖"],
+                bgColor: "#ce93d8"
+            }
+        };
 
-        let lastHole;
-        let timeUp = false;
+        // ========== GAME STATE ==========
+        let currentSkin = localStorage.getItem('whackAMoleSkin') || 'classic';
+        let soundEnabled = localStorage.getItem('whackAMoleSoundEnabled') !== 'false';
+        let highScore = parseInt(localStorage.getItem('whackAMoleHighScore')) || 0;
+
         let score = 0;
         let timeLeft = 30;
-        let timerId;
-        let highScore = localStorage.getItem('whackAMoleHighScore') || 0;
-        let soundEnabled = localStorage.getItem('whackAMoleSoundEnabled') !== 'false';
+        let combo = 0;
+        let maxCombo = 0;
+        let streak = 0;
+        let lastHole = null;
+        let timeUp = false;
+        let timerId = null;
+        let gameActive = false;
 
-        // Audio Context for sound effects
+        // ========== DOM ELEMENTS ==========
+        const gameGrid = document.getElementById('gameGrid');
+        const scoreBoard = document.getElementById('score');
+        const timeBoard = document.getElementById('time');
+        const comboBoard = document.getElementById('combo');
+        const highScoreBoard = document.getElementById('highScore');
+        const streakFill = document.getElementById('streakFill');
+        const comboDisplay = document.getElementById('comboDisplay');
+        const resultModal = document.getElementById('resultModal');
+        const settingsModal = document.getElementById('settingsModal');
+        const skinsModal = document.getElementById('skinsModal');
+        const skinGrid = document.getElementById('skinGrid');
+        const soundToggle = document.getElementById('soundToggle');
+        const soundIcon = document.getElementById('soundIcon');
+        const startBtn = document.getElementById('startBtn');
+
+        // ========== AUDIO ==========
         let audioContext;
 
         function initAudio() {
@@ -442,116 +984,288 @@
             }
         }
 
-        // Sound effect generators using Web Audio API
-        function playWhackSound() {
+        function playSound(freq, type = 'sine', duration = 0.1) {
             if (!soundEnabled) return;
             initAudio();
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.frequency.setValueAtTime(freq, audioContext.currentTime);
+            gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            osc.type = type;
+            osc.start();
+            osc.stop(audioContext.currentTime + duration);
+        }
 
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(80, audioContext.currentTime + 0.1);
-
-            gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-
-            oscillator.type = 'square';
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.15);
+        function playWhackSound() {
+            playSound(200, 'square', 0.12);
+            setTimeout(() => playSound(150, 'square', 0.08), 50);
         }
 
         function playPopUpSound() {
-            if (!soundEnabled) return;
-            initAudio();
+            playSound(400, 'sine', 0.08);
+        }
 
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.08);
-
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-
-            oscillator.type = 'sine';
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.1);
+        function playComboSound(multiplier) {
+            const baseFreq = 300 + (multiplier * 100);
+            playSound(baseFreq, 'sine', 0.15);
         }
 
         function playGameStartSound() {
             if (!soundEnabled) return;
             initAudio();
-
-            const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
-            notes.forEach((freq, i) => {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.12);
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + i * 0.12);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.12 + 0.2);
-
-                oscillator.type = 'sine';
-                oscillator.start(audioContext.currentTime + i * 0.12);
-                oscillator.stop(audioContext.currentTime + i * 0.12 + 0.2);
+            [523, 659, 784].forEach((freq, i) => {
+                setTimeout(() => playSound(freq, 'sine', 0.2), i * 100);
             });
         }
 
         function playGameOverSound() {
             if (!soundEnabled) return;
             initAudio();
-
-            const notes = [392, 349.23, 329.63, 293.66]; // G4, F4, E4, D4
-            notes.forEach((freq, i) => {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.15);
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + i * 0.15);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.15 + 0.25);
-
-                oscillator.type = 'triangle';
-                oscillator.start(audioContext.currentTime + i * 0.15);
-                oscillator.stop(audioContext.currentTime + i * 0.15 + 0.25);
+            [392, 349, 330, 294].forEach((freq, i) => {
+                setTimeout(() => playSound(freq, 'triangle', 0.25), i * 150);
             });
         }
 
         function playHighScoreSound() {
             if (!soundEnabled) return;
             initAudio();
-
-            const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
-            notes.forEach((freq, i) => {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.1);
-                gainNode.gain.setValueAtTime(0.35, audioContext.currentTime + i * 0.1);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.1 + 0.3);
-
-                oscillator.type = 'sine';
-                oscillator.start(audioContext.currentTime + i * 0.1);
-                oscillator.stop(audioContext.currentTime + i * 0.1 + 0.3);
+            [523, 659, 784, 1047].forEach((freq, i) => {
+                setTimeout(() => playSound(freq, 'sine', 0.3), i * 100);
             });
         }
 
-        // Settings functions
+        // ========== INITIALIZATION ==========
+        function init() {
+            highScoreBoard.textContent = highScore;
+            soundToggle.checked = soundEnabled;
+            updateSoundIcon();
+            generateHoles();
+            generateSkinGrid();
+        }
+
+        function generateHoles() {
+            gameGrid.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const hole = document.createElement('div');
+                hole.className = 'hole';
+                hole.innerHTML = `<div class="mole ${SKINS[currentSkin].class}"><div class="mole-inner">${SKINS[currentSkin].emoji}</div></div>`;
+                hole.addEventListener('click', handleHoleClick);
+                hole.addEventListener('touchstart', handleHoleClick, { passive: true });
+                gameGrid.appendChild(hole);
+            }
+        }
+
+        function generateSkinGrid() {
+            skinGrid.innerHTML = '';
+            Object.entries(SKINS).forEach(([key, skin]) => {
+                const card = document.createElement('div');
+                card.className = `skin-card ${currentSkin === key ? 'selected' : ''}`;
+                card.innerHTML = `
+                    <span class="skin-emoji">${skin.emoji}</span>
+                    <span class="skin-name">${skin.name}</span>
+                `;
+                card.onclick = () => selectSkin(key);
+                skinGrid.appendChild(card);
+            });
+        }
+
+        // ========== SKIN SELECTION ==========
+        function selectSkin(skinKey) {
+            currentSkin = skinKey;
+            localStorage.setItem('whackAMoleSkin', skinKey);
+            generateSkinGrid();
+            generateHoles();
+            playPopUpSound();
+        }
+
+        // ========== GAME LOGIC ==========
+        function randomTime(min, max) {
+            return Math.round(Math.random() * (max - min) + min);
+        }
+
+        function randomHole() {
+            const holes = document.querySelectorAll('.hole');
+            let idx = Math.floor(Math.random() * holes.length);
+            const hole = holes[idx];
+            if (hole === lastHole) return randomHole();
+            lastHole = hole;
+            return hole;
+        }
+
+        function peep() {
+            if (timeUp) return;
+
+            // Speed increases as time decreases
+            const minTime = Math.max(300, 600 - (30 - timeLeft) * 10);
+            const maxTime = Math.max(600, 1000 - (30 - timeLeft) * 15);
+            const time = randomTime(minTime, maxTime);
+
+            const hole = randomHole();
+            const mole = hole.querySelector('.mole');
+
+            mole.classList.add('up');
+            mole.classList.remove('bonked');
+            playPopUpSound();
+
+            setTimeout(() => {
+                if (mole.classList.contains('up') && !mole.classList.contains('bonked')) {
+                    // Missed this mole - reset combo
+                    combo = 0;
+                    comboBoard.textContent = combo;
+                    streak = Math.max(0, streak - 2);
+                    updateStreakBar();
+                }
+                mole.classList.remove('up');
+                if (!timeUp) peep();
+            }, time);
+        }
+
+        function handleHoleClick(e) {
+            if (!gameActive) return;
+            e.preventDefault();
+
+            const hole = e.currentTarget;
+            const mole = hole.querySelector('.mole');
+
+            if (!mole.classList.contains('up') || mole.classList.contains('bonked')) return;
+
+            // Hit!
+            score++;
+            combo++;
+            streak = Math.min(10, streak + 1);
+            maxCombo = Math.max(maxCombo, combo);
+
+            mole.classList.remove('up');
+            mole.classList.add('bonked');
+
+            // Update displays
+            scoreBoard.textContent = score;
+            comboBoard.textContent = combo;
+            updateStreakBar();
+
+            // Spawn particles
+            const rect = hole.getBoundingClientRect();
+            spawnParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+            // Show combo popup for big combos
+            if (combo >= 3 && combo % 2 === 1) {
+                showComboPopup(combo);
+                playComboSound(combo);
+                if (combo >= 5) {
+                    document.body.classList.add('shake');
+                    setTimeout(() => document.body.classList.remove('shake'), 300);
+                }
+            } else {
+                playWhackSound();
+            }
+        }
+
+        function spawnParticles(x, y) {
+            const skin = SKINS[currentSkin];
+            const count = 3 + Math.floor(combo / 2);
+
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.textContent = skin.particles[Math.floor(Math.random() * skin.particles.length)];
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+
+                const angle = (Math.random() * 360) * Math.PI / 180;
+                const distance = 50 + Math.random() * 80;
+                particle.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
+                particle.style.setProperty('--ty', Math.sin(angle) * distance - 30 + 'px');
+
+                document.body.appendChild(particle);
+                setTimeout(() => particle.remove(), 600);
+            }
+        }
+
+        function showComboPopup(comboVal) {
+            comboDisplay.textContent = `${comboVal}x!`;
+            comboDisplay.classList.remove('show');
+            void comboDisplay.offsetWidth; // Force reflow
+            comboDisplay.classList.add('show');
+        }
+
+        function updateStreakBar() {
+            streakFill.style.width = (streak * 10) + '%';
+        }
+
+        function startGame() {
+            if (gameActive) return;
+
+            // Reset state
+            score = 0;
+            combo = 0;
+            maxCombo = 0;
+            streak = 0;
+            timeLeft = 30;
+            timeUp = false;
+            gameActive = true;
+
+            // Update UI
+            scoreBoard.textContent = 0;
+            comboBoard.textContent = 0;
+            timeBoard.textContent = 30;
+            updateStreakBar();
+            startBtn.disabled = true;
+            startBtn.textContent = "🎮 Playing...";
+
+            // Regenerate holes with current skin
+            generateHoles();
+
+            playGameStartSound();
+
+            // Start mole spawning
+            setTimeout(peep, 500);
+
+            // Start timer
+            timerId = setInterval(() => {
+                timeLeft--;
+                timeBoard.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerId);
+                    timeUp = true;
+                    gameActive = false;
+                    startBtn.disabled = false;
+                    startBtn.textContent = "🎮 Start Game";
+                    showResult();
+                }
+            }, 1000);
+        }
+
+        function showResult() {
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalCombo').textContent = maxCombo;
+            document.getElementById('modalHighScore').textContent = highScore;
+
+            const isNewHighScore = score > highScore;
+            if (isNewHighScore) {
+                highScore = score;
+                localStorage.setItem('whackAMoleHighScore', highScore);
+                highScoreBoard.textContent = highScore;
+                document.getElementById('highScoreMsg').style.display = 'block';
+                document.getElementById('modalTitle').textContent = '🏆 Amazing! 🏆';
+                playHighScoreSound();
+            } else {
+                document.getElementById('highScoreMsg').style.display = 'none';
+                document.getElementById('modalTitle').textContent = "⏰ Time's Up!";
+                playGameOverSound();
+            }
+
+            resultModal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            resultModal.style.display = 'none';
+        }
+
+        // ========== SETTINGS ==========
         function openSettings() {
             settingsModal.style.display = 'flex';
         }
@@ -564,11 +1278,7 @@
             soundEnabled = soundToggle.checked;
             localStorage.setItem('whackAMoleSoundEnabled', soundEnabled);
             updateSoundIcon();
-
-            // Play a test sound when enabling
-            if (soundEnabled) {
-                playPopUpSound();
-            }
+            if (soundEnabled) playPopUpSound();
         }
 
         function updateSoundIcon() {
@@ -579,117 +1289,35 @@
             }
         }
 
-        // Initialize sound toggle state
-        soundToggle.checked = soundEnabled;
-        updateSoundIcon();
-
-        // Display high score on load
-        highScoreBoard.textContent = highScore;
-
-        function randomTime(min, max) {
-            return Math.round(Math.random() * (max - min) + min);
-        }
-
-        function randomHole(holes) {
-            const idx = Math.floor(Math.random() * holes.length);
-            const hole = holes[idx];
-            if (hole === lastHole) {
-                return randomHole(holes);
+        function resetHighScore() {
+            if (confirm('Reset your high score to 0?')) {
+                highScore = 0;
+                localStorage.setItem('whackAMoleHighScore', 0);
+                highScoreBoard.textContent = 0;
             }
-            lastHole = hole;
-            return hole;
         }
 
-        function peep() {
-            const time = randomTime(400, 1000);
-            const hole = randomHole(holes);
-            const mole = hole.querySelector('.mole');
-
-            mole.classList.add('up');
-            mole.classList.remove('bonked');
-            playPopUpSound();
-
-            setTimeout(() => {
-                mole.classList.remove('up');
-                if (!timeUp) peep();
-            }, time);
+        // ========== SKINS MODAL ==========
+        function openSkins() {
+            generateSkinGrid();
+            skinsModal.style.display = 'flex';
         }
 
-        function startGame() {
-            if (timerId) clearInterval(timerId);
-            scoreBoard.textContent = 0;
-            timeBoard.textContent = 30;
-            timeUp = false;
-            score = 0;
-            timeLeft = 30;
-            document.getElementById('startBtn').disabled = true;
-            document.getElementById('startBtn').textContent = "Playing...";
+        function closeSkins() {
+            skinsModal.style.display = 'none';
+        }
 
-            playGameStartSound();
-
-            setTimeout(() => {
-                peep();
-            }, 400);
-
-            timerId = setInterval(() => {
-                timeLeft--;
-                timeBoard.textContent = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(timerId);
-                    timeUp = true;
-                    document.getElementById('startBtn').disabled = false;
-                    document.getElementById('startBtn').textContent = "Start Game";
-                    showResult();
+        // ========== MODAL CLICK OUTSIDE ==========
+        [settingsModal, skinsModal, resultModal].forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
                 }
-            }, 1000);
-        }
-
-        function showResult() {
-            finalScoreSpan.textContent = score;
-            modalHighScoreSpan.textContent = highScore;
-
-            // Check for new high score
-            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem('whackAMoleHighScore', highScore);
-                highScoreBoard.textContent = highScore;
-                highScoreMsg.style.display = 'block';
-                modalTitle.textContent = '🏆 Amazing! 🏆';
-                playHighScoreSound();
-            } else {
-                highScoreMsg.style.display = 'none';
-                modalTitle.textContent = "Time's Up!";
-                playGameOverSound();
-            }
-
-            resultModal.style.display = 'flex';
-        }
-
-        function closeModal() {
-            resultModal.style.display = 'none';
-        }
-
-        function bonk(e) {
-            if (!e.isTrusted) return; // cheater!
-            if (this.classList.contains('bonked')) return; // Already hit
-
-            score++;
-            this.classList.remove('up');
-            this.classList.add('bonked');
-            scoreBoard.textContent = score;
-            playWhackSound();
-        }
-
-        moles.forEach(mole => mole.addEventListener('click', bonk));
-        moles.forEach(mole => mole.addEventListener('touchstart', bonk)); // Mobile support
-
-        // Close settings modal when clicking outside
-        settingsModal.addEventListener('click', (e) => {
-            if (e.target === settingsModal) {
-                closeSettings();
-            }
+            });
         });
 
+        // ========== INITIALIZE ==========
+        init();
     </script>
 </body>
 
